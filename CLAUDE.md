@@ -35,6 +35,29 @@ devbox/
 └── shared/           # OpenAPI spec, generated types
 ```
 
+## Local Dev via mise
+
+devbox is polyglot (FastAPI backend in `backend/` + React Router 7 frontend in `frontend/`), so
+`mise.toml` pins both toolchains and orchestrates tasks. See `~/projects/knowledge-base/mise.md`.
+
+```bash
+mise install        # node 20, pnpm 10.33, python 3.12, uv
+mise run dev        # React Router frontend + FastAPI backend together
+mise run check      # typecheck (web) + ruff lint/format (api)
+mise run build      # production React Router build
+mise tasks ls       # all tasks
+```
+
+Notes:
+- **Frontend is on pnpm** (version pinned via `packageManager` and `mise.toml [tools]`); backend
+  is on uv. The `frontend/Dockerfile` installs `pnpm@10.33.0` and uses `pnpm install
+  --frozen-lockfile` across its build stages.
+- **Backend dev tools are an optional-deps extra**, so ruff/pytest run via `uv run --extra dev`.
+- **Pre-existing backend debt (not from this change):** ruff currently reports findings,
+  `uv.lock` drifts on `uv run`, and there are no tests yet. `check:api` surfaces the ruff
+  findings honestly; clean these up separately.
+- **CI gotcha:** never pipe `mise run check` through `tail` — it masks mise's exit code.
+
 ## Development Workflow
 - Simple changes: implement directly
 - Larger changes: plan first, then implement

@@ -1,0 +1,67 @@
+# mise — polyglot orchestrator for devbox.
+# Two halves in one repo:
+#   - Backend:  FastAPI in backend/ (Python + uv).
+#   - Frontend: React Router 7 (framework mode) in frontend/, on pnpm.
+# mise pins both toolchains and runs cross-language tasks. See
+# ~/projects/knowledge-base/mise.md for the rationale.
+
+[tools]
+node = "20"        # matches frontend/Dockerfile (node:20-alpine); RR7 + Vite 7 need >= 20.19
+pnpm = "10.33.0"   # frontend package manager (matches its packageManager field)
+python = "3.12"    # matches backend requires-python and ruff target-version
+uv = "latest"      # backend uses uv (uv.lock present)
+
+[env]
+# No committed .env; the backend reads its own config and Vite reads frontend/.env.
+# Each task sets `dir`, so the right env loads naturally.
+
+[tasks.dev]
+description = "Run frontend (React Router) + backend (FastAPI) together"
+depends = ["dev:web", "dev:api"]
+
+[tasks."dev:web"]
+description = "React Router dev server (frontend)"
+dir = "frontend"
+run = "pnpm dev"
+
+[tasks."dev:api"]
+description = "FastAPI dev server with reload (backend)"
+dir = "backend"
+run = "uv run uvicorn app.main:app --reload"
+
+[tasks.check]
+description = "Typecheck (web) + ruff (api) — the canonical gate"
+depends = ["check:web", "check:api"]
+
+[tasks."check:web"]
+description = "React Router typegen + TypeScript typecheck (frontend)"
+dir = "frontend"
+run = "pnpm typecheck"
+
+[tasks."check:api"]
+description = "Ruff lint + format check (backend). Dev tools are an optional-deps extra."
+dir = "backend"
+run = [
+  "uv run --extra dev ruff check .",
+  "uv run --extra dev ruff format --check .",
+]
+# Note: no pytest task — this backend has no tests yet. Add `uv run --extra dev pytest`
+# here once tests exist. The backend also currently has pre-existing ruff findings and
+# some uv.lock drift; both are separate cleanups, not part of the pnpm/mise change.
+
+[tasks.build]
+description = "Production build of the React Router frontend"
+dir = "frontend"
+run = "pnpm build"
+
+[tasks.install]
+description = "Install deps for both halves"
+depends = ["install:web", "install:api"]
+
+[tasks."install:web"]
+dir = "frontend"
+run = "pnpm install"
+
+[tasks."install:api"]
+dir = "backend"
+run = "uv sync --extra dev"
