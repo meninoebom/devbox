@@ -67,6 +67,45 @@ async def run() -> int:
                 c.ok(wtj["kind"] == "workbench_run", "recorded trace kind == workbench_run")
                 c.ok("query_plan" in wlanes, "workbench trace has a query_plan lane")
 
+            # --- Phase 2: assertion engine + prediction/reveal + wager ---
+            print("conscience:")
+            sp = await client.post("/api/predictions", json={"target": "rows", "predicted": 42})
+            pid = sp.json()["id"]
+            rv = await client.post(f"/api/predictions/{pid}/reveal", json={"subject": {"rows": 42}})
+            c.ok(rv.json().get("correct") is True, "sealed prediction reveals correct diff")
+            rv2 = await client.post(
+                f"/api/predictions/{pid}/reveal", json={"subject": {"rows": 42}}
+            )
+            c.ok(rv2.status_code == 409, "second reveal rejected (seal is once-only)")
+
+            wag = await client.post(
+                "/api/wager",
+                json={
+                    "sql": "SELECT id FROM books WHERE author_id = 11",
+                    "calls": [
+                        {"target": "plan.has_seq_scan", "predicted": True, "confidence": 0.6}
+                    ],
+                },
+            )
+            wj = wag.json()
+            if not wj.get("specimen_up", False):
+                c.ok(False, "wager needs the lab specimen")
+            else:
+                c.ok(len(wj.get("results", [])) == 1, "wager reveals its slate")
+                c.ok("correct" in wj["results"][0], "wager result carries a verdict")
+
+            cal = await client.get("/api/calibration")
+            c.ok(len(cal.json()) >= 1, "calibration summary has rows after reveals")
+
+            wc = await client.post(
+                "/api/workbench/run",
+                json={
+                    "sql": "SELECT count(*) AS n FROM authors",
+                    "call": {"target": "rows", "predicted": 1},
+                },
+            )
+            c.ok(wc.json().get("call_result") is not None, "workbench run honors a call-it")
+
     if c.failures:
         print(f"\nSMOKE FAILED: {len(c.failures)} check(s) red")
         return 1

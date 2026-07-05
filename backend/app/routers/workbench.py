@@ -12,8 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.trace import Lane, TraceKind
+from app.schemas.prediction import CallSpec
 from app.services import lab_runner
+from app.services.assertions import metrics_from_run
 from app.services.plan_parser import parse
+from app.services.predictions import reveal, seal
 from app.services.trace_store import EventSpec, record_trace
 
 router = APIRouter(prefix="/api/workbench", tags=["workbench"])
@@ -23,6 +26,9 @@ class RunRequest(BaseModel):
     sql: str
     setup_sql: str | None = None
     allow_writes: bool = False
+    # Optional "call it" chip: predict a metric before the plan reveals. Feeds
+    # calibration; never blocks or changes the run itself.
+    call: CallSpec | None = None
 
 
 @router.post("/run")
@@ -62,6 +68,18 @@ async def run_query(body: RunRequest, db: AsyncSession = Depends(get_db)):
         )
         trace_id = trace.id
 
+    # The "call it" chip: if the worker committed a prediction, reveal it against
+    # this run's metrics. A malformed call never breaks the run.
+    call_result = None
+    if body.call is not None and not result.error and plan is not None:
+        subject = metrics_from_run(
+            {"row_count": result.row_count, "duration_ms": result.duration_ms}, plan
+        )
+        p = await seal(
+            db, body.call.target, body.call.predicted, body.call.confidence, body.call.tolerance
+        )
+        call_result = await reveal(db, p, subject)
+
     return {
         "specimen_up": True,
         "error": result.error,
@@ -72,4 +90,5 @@ async def run_query(body: RunRequest, db: AsyncSession = Depends(get_db)):
         "duration_ms": result.duration_ms,
         "plan": plan,
         "trace_id": trace_id,
+        "call_result": call_result,
     }

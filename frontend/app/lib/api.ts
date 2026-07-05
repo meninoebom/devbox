@@ -111,7 +111,12 @@ export const api = {
     models: () => fetchAPI<any>("/api/meta/models"),
   },
   workbench: {
-    run: (body: { sql: string; setup_sql?: string; allow_writes?: boolean }) =>
+    run: (body: {
+      sql: string;
+      setup_sql?: string;
+      allow_writes?: boolean;
+      call?: { target: string; predicted: any; confidence?: number };
+    }) =>
       fetchAPI<any>("/api/workbench/run", {
         method: "POST",
         body: JSON.stringify(body),

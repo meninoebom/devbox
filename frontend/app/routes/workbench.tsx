@@ -23,6 +23,7 @@ interface RunResult {
   duration_ms?: number | null;
   plan?: Plan | null;
   trace_id?: number | null;
+  call_result?: { predicted: any; actual: any; correct: boolean } | null;
 }
 
 const STARTER_SQL = `SELECT id, title, price
@@ -141,6 +142,9 @@ export default function Workbench() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
   const [prev, setPrev] = useState<RunResult | null>(null);
+  // Optional "call it": predict whether the plan will use a sequential scan
+  // before running. null = no call. true = "seq scan", false = "uses an index".
+  const [call, setCall] = useState<boolean | null>(null);
 
   const runQuery = async () => {
     if (!sql.trim() || loading) return;
@@ -149,6 +153,10 @@ export default function Workbench() {
       const { data } = await api.workbench.run({
         sql,
         setup_sql: setupSql.trim() || undefined,
+        call:
+          call === null
+            ? undefined
+            : { target: "plan.has_seq_scan", predicted: call },
       });
       // Stash the last good run so we can diff against it.
       if (result && result.specimen_up && !result.error) setPrev(result);
@@ -211,7 +219,7 @@ export default function Workbench() {
             className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded px-3 py-2 font-mono text-sm text-neutral-200 focus:outline-none focus:border-amber-500/50 resize-y"
           />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Button
             onClick={runQuery}
             disabled={loading}
@@ -221,6 +229,30 @@ export default function Workbench() {
             {loading ? "Running..." : "Run"}
           </Button>
           <span className="text-[11px] text-neutral-600 font-mono">⌘/Ctrl + Enter</span>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <span className="text-[11px] uppercase tracking-wider text-neutral-500 font-mono">
+              call it:
+            </span>
+            {(
+              [
+                [true, "seq scan"],
+                [false, "index"],
+                [null, "—"],
+              ] as [boolean | null, string][]
+            ).map(([v, label]) => (
+              <button
+                key={label}
+                onClick={() => setCall(v)}
+                className={`font-mono text-[11px] px-2 py-1 border rounded ${
+                  call === v
+                    ? "border-amber-500 text-amber-400 bg-amber-500/10"
+                    : "border-[#2a2a2a] text-neutral-500 hover:text-neutral-300"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -253,6 +285,18 @@ export default function Workbench() {
               <span className="text-neutral-500 tabular-nums">
                 {result!.row_count} rows{result!.truncated ? " (capped)" : ""}
               </span>
+              {result!.call_result && (
+                <span
+                  className={`font-mono text-xs px-2 py-0.5 rounded border ${
+                    result!.call_result.correct
+                      ? "text-emerald-400 border-emerald-800 bg-emerald-500/5"
+                      : "text-rose-400 border-rose-800 bg-rose-500/5"
+                  }`}
+                >
+                  called {result!.call_result.predicted ? "seq scan" : "index"}:{" "}
+                  {result!.call_result.correct ? "right" : "wrong"}
+                </span>
+              )}
               {result!.trace_id != null && (
                 <button
                   onClick={() => inspectTrace(String(result!.trace_id))}

@@ -15,8 +15,10 @@ from app.routers import (
     auth,
     messages,
     meta,
+    predictions,
     projects,
     traces,
+    wager,
     workbench,
     workshop_http,
     workshop_types,
@@ -60,6 +62,8 @@ app.include_router(workshop_http.router)
 app.include_router(workshop_types.router)
 app.include_router(meta.router)
 app.include_router(workbench.router)
+app.include_router(predictions.router)
+app.include_router(wager.router)
 
 
 @app.get("/", tags=["root"])
