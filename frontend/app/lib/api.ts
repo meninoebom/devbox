@@ -162,6 +162,28 @@ export const api = {
       }),
     cadence: () => fetchAPI<any>("/api/rounds/cadence"),
   },
+  reps: {
+    create: (body: { topic: string; restate?: string }) =>
+      fetchAPI<any>("/api/reps", { method: "POST", body: JSON.stringify(body) }),
+    predict: (id: number, body: { big_o: string }) =>
+      fetchAPI<any>(`/api/reps/${id}/predict`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    reflect: (id: number, body: { reflection: string }) =>
+      fetchAPI<any>(`/api/reps/${id}/reflect`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  },
+  bench: {
+    registerCache: (body: { name: string; source: string }) =>
+      fetchAPI<any>("/api/slots/cache/register", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    list: () => fetchAPI<any[]>("/api/bench"),
+  },
   raw: async (url: string, options?: RequestInit) => {
     const res = await fetch(`${BASE_URL}${url}`, options);
     const traceId = res.headers.get("X-Trace-Id");

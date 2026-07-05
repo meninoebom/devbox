@@ -104,6 +104,15 @@ Notes:
   fail structurally). Score is delta-from-par; cadence = reps + trailing-14-day rate
   (no streak column exists). Endpoints `/api/rounds/generate|{id}/submit|cadence`;
   UI at `/rounds`.
+- **The Gym + Bench (Phase 5):** deliberate practice against live software. A Rep
+  (`reps.py`) is predict-gated: advancing to reflect requires a committed Big-O (a
+  real sealed Phase-2 Prediction), and completing appends a section to the
+  `HOMEBASE_LOG_DIR` (config). The Bench registers a hand-built impl into a
+  pluggable slot (first: `cache_backend`): the source is exec'd in a restricted
+  namespace and benchmarked against a reference LRU on a fixed workload, with the
+  correctness verdict via the assertion engine (a `benchmark` trace is recorded).
+  Dusty-decay is derived from `last_run_at`; no streak column exists. Endpoints
+  `/api/reps/*`, `/api/slots/cache/register`, `/api/bench`; UI at `/gym`.
 - **Type Bridge:** Pydantic models → OpenAPI → TypeScript types.
 - **Workshop Pattern:** Each workshop is self-contained with its own routes, components, and API endpoints.
 

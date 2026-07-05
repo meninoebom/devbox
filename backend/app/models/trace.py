@@ -24,6 +24,7 @@ class TraceKind(enum.StrEnum):
     REQUEST = "request"
     WORKBENCH_RUN = "workbench_run"
     AGENT_RUN = "agent_run"
+    BENCHMARK = "benchmark"
 
 
 class Lane(enum.StrEnum):

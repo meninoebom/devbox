@@ -28,5 +28,9 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     MECHANIC_MODEL: str = "claude-sonnet-5"
 
+    # The Gym (Phase 5). Reps append to this log, continuing the engineering-gym
+    # convention. Config, so the gate can point it at a temp dir.
+    HOMEBASE_LOG_DIR: str = str(Path.home() / "Documents" / "homebase-log")
+
 
 settings = Settings()

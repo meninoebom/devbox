@@ -242,6 +242,60 @@ async def run() -> int:
                 cad = await client.get("/api/rounds/cadence")
                 c.ok(cad.json().get("reps", 0) >= 1, "cadence counts a rep after a win")
 
+            # --- Phase 5: the Gym (rep predict-gate + homebase-log) + the Bench ---
+            print("gym:")
+            import tempfile
+            from pathlib import Path
+
+            from app.config import settings as _settings
+
+            _settings.HOMEBASE_LOG_DIR = tempfile.mkdtemp(prefix="devbox-reps-")
+
+            rc = await client.post("/api/reps", json={"topic": "windowed variance"})
+            rep_id = rc.json()["id"]
+            blocked = await client.post(f"/api/reps/{rep_id}/reflect", json={"reflection": "x"})
+            c.ok(blocked.status_code == 428, "rep reflect is gated on a committed prediction")
+
+            await client.post(f"/api/reps/{rep_id}/predict", json={"big_o": "O(n)"})
+            done = await client.post(
+                f"/api/reps/{rep_id}/reflect", json={"reflection": "linear as predicted"}
+            )
+            dj = done.json()
+            c.ok(dj.get("logged") is True, "rep completes and writes the homebase-log")
+            c.ok(Path(dj["log_path"]).exists(), "the rep log file exists at the configured path")
+
+            lru_src = (
+                "class Cache:\n"
+                "    def __init__(self, capacity):\n"
+                "        self.cap = capacity\n"
+                "        self.d = OrderedDict()\n"
+                "    def get(self, key):\n"
+                "        if key not in self.d:\n"
+                "            return None\n"
+                "        self.d.move_to_end(key)\n"
+                "        return self.d[key]\n"
+                "    def set(self, key, value):\n"
+                "        if key in self.d:\n"
+                "            self.d.move_to_end(key)\n"
+                "        self.d[key] = value\n"
+                "        if len(self.d) > self.cap:\n"
+                "            self.d.popitem(last=False)\n"
+            )
+            reg = await client.post(
+                "/api/slots/cache/register", json={"name": "my LRU", "source": lru_src}
+            )
+            rj = reg.json()
+            c.ok(
+                rj.get("registered") is True and rj.get("correct") is True,
+                "a hand-built LRU registers and benchmarks correct vs the reference",
+            )
+            bench = await client.get("/api/bench")
+            bj = bench.json()
+            c.ok(
+                len(bj) >= 1 and "dust_days" in bj[0],
+                "the bench lists impls with a derived dust signal",
+            )
+
     if c.failures:
         print(f"\nSMOKE FAILED: {len(c.failures)} check(s) red")
         return 1

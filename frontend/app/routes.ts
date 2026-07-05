@@ -6,6 +6,7 @@ export default [
     route("workbench", "routes/workbench.tsx"),
     route("mechanic", "routes/mechanic.tsx"),
     route("rounds", "routes/rounds.tsx"),
+    route("gym", "routes/gym.tsx"),
     route("guides", "routes/guides.tsx"),
     route("workshops/http", "routes/workshops.http.tsx"),
     route("workshops/types", "routes/workshops.types.tsx"),
