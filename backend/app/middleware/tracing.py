@@ -1,11 +1,11 @@
 """Request tracing middleware — the heart of the DevBox inspector.
 
 Intercepts every request, captures method/path/headers/body, times the
-request, captures SQL queries via the context-var in database.py, and
-stores everything as a RequestTrace row.
+request, captures SQL queries via the context-var in database.py, and stores
+everything as a Trace (kind=request) with one http event plus one sql event
+per query. The Trace/TraceEvent model is the same board the Workbench writes to.
 """
 
-import json
 import time
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -13,7 +13,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from app.database import async_session_factory, captured_queries
-from app.models.request_trace import RequestTrace
+from app.models.trace import Lane, TraceKind
+from app.services.trace_store import EventSpec, record_trace
 
 
 class TracingMiddleware(BaseHTTPMiddleware):
@@ -26,7 +27,7 @@ class TracingMiddleware(BaseHTTPMiddleware):
         method = request.method
         path = request.url.path
         query = str(request.query_params) if request.query_params else None
-        req_headers = json.dumps(dict(request.headers))
+        req_headers = dict(request.headers)
 
         try:
             body_bytes = await request.body()
@@ -52,24 +53,43 @@ class TracingMiddleware(BaseHTTPMiddleware):
         resp_body_bytes = b"".join(resp_body_parts)
         resp_body = resp_body_bytes.decode("utf-8", errors="replace")
 
+        # --- Build the event lanes: one http span, one sql span per query ---
+        events = [
+            EventSpec(
+                lane=Lane.HTTP,
+                offset_ms=0.0,
+                duration_ms=round(duration, 2),
+                detail={
+                    "method": method,
+                    "path": path,
+                    "query_params": query,
+                    "request_headers": req_headers,
+                    "request_body": req_body,
+                    "response_status": response.status_code,
+                    "response_headers": dict(response.headers),
+                    "response_body": resp_body[:10000],  # cap stored body
+                },
+            )
+        ]
+        for q in query_bucket:
+            events.append(
+                EventSpec(
+                    lane=Lane.SQL,
+                    duration_ms=q.get("duration_ms"),
+                    detail={"sql": q.get("sql", ""), "params": q.get("params")},
+                )
+            )
+
         # --- Store trace ---
-        trace = RequestTrace(
-            method=method,
-            path=path,
-            query_params=query,
-            request_headers=req_headers,
-            request_body=req_body,
-            response_status=response.status_code,
-            response_headers=json.dumps(dict(response.headers)),
-            response_body=resp_body[:10000],  # cap stored body
-            duration_ms=round(duration, 2),
-            sql_queries=json.dumps(query_bucket) if query_bucket else None,
-        )
         try:
             async with async_session_factory() as session:
-                session.add(trace)
-                await session.commit()
-                await session.refresh(trace)
+                trace = await record_trace(
+                    session,
+                    kind=TraceKind.REQUEST,
+                    label=f"{method} {path}",
+                    duration_ms=round(duration, 2),
+                    events=events,
+                )
                 trace_id = trace.id
         except Exception:
             trace_id = None

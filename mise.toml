@@ -49,6 +49,18 @@ run = [
 # here once tests exist. The backend also currently has pre-existing ruff findings and
 # some uv.lock drift; both are separate cleanups, not part of the pnpm/mise change.
 
+[tasks."lab:up"]
+description = "Start the Workbench lab Postgres specimen (detached)"
+run = "docker compose up -d lab-postgres"
+
+[tasks."lab:down"]
+description = "Stop the lab specimen (keeps the seeded volume)"
+run = "docker compose down"
+
+[tasks."lab:reset"]
+description = "Drop and re-seed the lab world (destroys the volume, re-runs seed.sql)"
+run = "docker compose down -v && docker compose up -d lab-postgres"
+
 [tasks.build]
 description = "Production build of the React Router frontend"
 dir = "frontend"

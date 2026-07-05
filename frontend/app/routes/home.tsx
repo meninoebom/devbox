@@ -15,6 +15,8 @@ import {
   Server,
   Code2,
   Workflow,
+  FlaskConical,
+  BookOpen,
 } from "lucide-react";
 
 export function meta() {
@@ -146,6 +148,47 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* The Bench */}
+      <div className="max-w-6xl mx-auto px-8 pt-12">
+        <h2 className="text-xs uppercase tracking-widest text-neutral-600 font-mono mb-6">
+          The Bench
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link to="/workbench">
+            <Card className="bg-[#1a1a1a] border-[#2a2a2a] hover:border-amber-500/30 transition-colors h-full">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2.5">
+                  <FlaskConical size={18} className="text-amber-400" />
+                  <CardTitle className="text-sm font-mono text-neutral-200">Workbench</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-neutral-500 text-sm">
+                  Paste a query, run it against the lab database, read the plan. The
+                  instrument for "why is this slow?"
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to="/guides">
+            <Card className="bg-[#1a1a1a] border-[#2a2a2a] hover:border-amber-500/30 transition-colors h-full">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2.5">
+                  <BookOpen size={18} className="text-amber-400" />
+                  <CardTitle className="text-sm font-mono text-neutral-200">Field Guides</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-neutral-500 text-sm">
+                  Reference reading on encoding, context, and cryptography, kept at
+                  one address.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </div>
 

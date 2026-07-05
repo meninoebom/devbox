@@ -1,7 +1,7 @@
 from app.schemas.errors import ErrorResponse, ValidationErrorDetail
 from app.schemas.message import MessageCreate, MessageRead, MessageUpdate
 from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
-from app.schemas.request_trace import RequestTraceRead
+from app.schemas.trace import TraceEventRead, TraceRead, TraceSummary
 from app.schemas.user import UserCreate, UserLogin, UserRead
 
 __all__ = [
@@ -12,7 +12,9 @@ __all__ = [
     "ProjectCreate",
     "ProjectRead",
     "ProjectUpdate",
-    "RequestTraceRead",
+    "TraceEventRead",
+    "TraceRead",
+    "TraceSummary",
     "UserCreate",
     "UserLogin",
     "UserRead",

@@ -10,7 +10,16 @@ from app.database import engine
 from app.middleware.cors import add_cors_middleware
 from app.middleware.tracing import TracingMiddleware
 from app.models import Base
-from app.routers import auth, messages, meta, projects, traces, workshop_http, workshop_types
+from app.routers import (
+    auth,
+    messages,
+    meta,
+    projects,
+    traces,
+    workbench,
+    workshop_http,
+    workshop_types,
+)
 
 
 @asynccontextmanager
@@ -51,6 +60,7 @@ app.include_router(projects.router)
 app.include_router(workshop_http.router)
 app.include_router(workshop_types.router)
 app.include_router(meta.router)
+app.include_router(workbench.router)
 
 
 @app.get("/", tags=["root"])

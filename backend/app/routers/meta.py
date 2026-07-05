@@ -1,13 +1,12 @@
 """Self-describing endpoints — the app inspects and explains itself."""
 
-import inspect
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 
 from app.models.message import Message
 from app.models.project import Project
-from app.models.request_trace import RequestTrace
+from app.models.trace import Trace, TraceEvent
 from app.models.user import User
 
 router = APIRouter(prefix="/api/meta", tags=["meta"])
@@ -83,6 +82,7 @@ async def list_models():
         "Message": {"table": Message.__tablename__, "columns": _sa_columns(Message)},
         "User": {"table": User.__tablename__, "columns": _sa_columns(User)},
         "Project": {"table": Project.__tablename__, "columns": _sa_columns(Project)},
-        "RequestTrace": {"table": RequestTrace.__tablename__, "columns": _sa_columns(RequestTrace)},
+        "Trace": {"table": Trace.__tablename__, "columns": _sa_columns(Trace)},
+        "TraceEvent": {"table": TraceEvent.__tablename__, "columns": _sa_columns(TraceEvent)},
     }
     return models

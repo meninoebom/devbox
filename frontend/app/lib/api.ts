@@ -110,6 +110,13 @@ export const api = {
     routes: () => fetchAPI<any[]>("/api/meta/routes"),
     models: () => fetchAPI<any>("/api/meta/models"),
   },
+  workbench: {
+    run: (body: { sql: string; setup_sql?: string; allow_writes?: boolean }) =>
+      fetchAPI<any>("/api/workbench/run", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  },
   raw: async (url: string, options?: RequestInit) => {
     const res = await fetch(`${BASE_URL}${url}`, options);
     const traceId = res.headers.get("X-Trace-Id");

@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encoding, Hashing & Encryption</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FAFAF8;
+    --surface: #FFFFFF;
+    --border: #E8E6E1;
+    --muted: #F0EEEA;
+    --text: #1A1A1A;
+    --text-secondary: #7A756A;
+    --blue: #3B6CE7;
+    --green: #2D8A56;
+    --amber: #C4841D;
+    --red: #D14343;
+    --code: #2E2E2E;
+    --blue-bg: #EBF0FC;
+    --green-bg: #E8F5ED;
+    --amber-bg: #FDF3E4;
+    --red-bg: #FDE8E8;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* === NAV === */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+  }
+  nav.scrolled { box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .nav-title { font-size: 16px; font-weight: 600; }
+  .progress-text { font-size: 13px; color: var(--text-secondary); min-width: 60px; text-align: right; }
+  .progress-bar { position: absolute; top: 0; left: 0; height: 2px; background: var(--blue); transition: width 0.2s ease; }
+
+  .mode-switcher {
+    background: var(--muted);
+    border-radius: 8px;
+    padding: 3px;
+    display: flex;
+    gap: 2px;
+  }
+  .mode-btn {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+    font-family: var(--font-body);
+  }
+  .mode-btn.active {
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    color: var(--text);
+  }
+
+  /* === MAIN === */
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  @media (min-width: 860px) { main { padding: 40px 40px 80px; } }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* === LEARN MODE === */
+  .hero { margin-bottom: 40px; }
+  .hero h1 { font-size: 26px; font-weight: 600; margin-bottom: 8px; line-height: 1.3; }
+  .hero .subtitle { font-size: 16px; color: var(--text-secondary); margin-bottom: 28px; }
+
+  .pillars {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 600px) { .pillars { grid-template-columns: 1fr 1fr 1fr; } }
+
+  .pillar {
+    padding: 16px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+  }
+  .pillar.hash { border-left-color: var(--green); }
+  .pillar.encrypt { border-left-color: var(--amber); }
+  .pillar h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .pillar p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+  .bridge {
+    font-style: italic;
+    color: var(--text-secondary);
+    padding: 28px 0;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* === CONCEPT CARD === */
+  .concept-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    border-radius: 10px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .concept-card.hash { border-left-color: var(--green); }
+  .concept-card.encrypt { border-left-color: var(--amber); }
+
+  .card-category {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  .cat-encoding { background: var(--blue-bg); color: var(--blue); }
+  .cat-hashing { background: var(--green-bg); color: var(--green); }
+  .cat-encryption { background: var(--amber-bg); color: var(--amber); }
+
+  .card-title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .card-oneliner { font-size: 15px; color: var(--text-secondary); margin-bottom: 20px; }
+
+  .card-section { margin-bottom: 20px; }
+  .card-section:last-child { margin-bottom: 0; }
+  .card-section-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  .analogy-box {
+    background: var(--muted);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .gotcha-box {
+    background: var(--amber-bg);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .props-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .prop-pill {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--muted);
+    color: var(--text-secondary);
+  }
+  .prop-pill.yes { background: var(--green-bg); color: var(--green); }
+  .prop-pill.no { background: var(--red-bg); color: var(--red); }
+  .prop-pill.key { background: var(--amber-bg); color: var(--amber); }
+
+  /* === INTERACTIVE DEMOS === */
+  .demo-box {
+    background: var(--muted);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .demo-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .demo-input, .demo-output {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    outline: none;
+  }
+  .demo-input {
+    background: var(--surface);
+    color: var(--code);
+  }
+  .demo-input:focus { border-color: var(--blue); outline: 2px solid var(--blue); outline-offset: -1px; }
+  .demo-output {
+    background: var(--bg);
+    color: var(--code);
+    border-color: transparent;
+    margin-top: 8px;
+    min-height: 42px;
+    word-break: break-all;
+  }
+
+  .demo-pair {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 600px) { .demo-pair { grid-template-columns: 1fr 1fr; } }
+
+  .demo-flash {
+    transition: background-color 0.3s ease;
+  }
+
+  /* === JWT DECODER === */
+  .jwt-parts { margin-top: 12px; }
+  .jwt-part {
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-all;
+  }
+  .jwt-part-label {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .jwt-header { background: var(--blue-bg); }
+  .jwt-payload { background: var(--green-bg); }
+  .jwt-signature { background: var(--amber-bg); }
+
+  /* === REFERENCE MODE === */
+  .ref-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 40px;
+  }
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .ref-table th {
+    background: var(--muted);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary);
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .ref-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .ref-table tr:nth-child(even) td { background: var(--bg); }
+  .ref-table tr:hover td { background: #F5F4F0; cursor: pointer; }
+
+  .type-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .decision-tree { margin-top: 40px; }
+  .decision-tree h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+  .decision-tree .subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; }
+  .dt-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 14px;
+    font-family: var(--font-body);
+    text-align: left;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: border-color 0.15s, background 0.15s;
+    color: var(--text);
+  }
+  .dt-btn:hover { border-color: var(--blue); background: #F8FAFF; }
+  .dt-answer {
+    display: none;
+    background: var(--muted);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: -4px 0 8px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .dt-answer.show { display: block; }
+  .dt-answer a { color: var(--blue); text-decoration: none; font-weight: 500; }
+  .dt-answer a:hover { text-decoration: underline; }
+
+  /* === QUIZ MODE === */
+  .quiz-intro { text-align: center; padding: 60px 0; }
+  .quiz-intro h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .quiz-intro p { font-size: 15px; color: var(--text-secondary); margin-bottom: 24px; }
+
+  .btn-primary {
+    display: inline-block;
+    background: var(--blue);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+
+  .btn-secondary {
+    display: inline-block;
+    background: var(--surface);
+    color: var(--text);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-family: var(--font-body);
+    margin-left: 8px;
+  }
+  .btn-secondary:hover { background: var(--bg); }
+
+  .quiz-card {
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  .quiz-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+  .quiz-question {
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  .quiz-option {
+    display: block;
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 14px;
+    font-family: var(--font-body);
+    text-align: left;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: border-color 0.15s, background 0.15s;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .quiz-option:hover:not(.answered) { border-color: var(--blue); background: #F8FAFF; }
+  .quiz-option.selected:not(.answered) { border-color: var(--blue); background: #F8FAFF; }
+  .quiz-option.correct { border-color: var(--green); background: var(--green-bg); cursor: default; }
+  .quiz-option.wrong { border-color: var(--red); background: var(--red-bg); cursor: default; }
+  .quiz-option.answered { cursor: default; }
+
+  .quiz-explain {
+    display: none;
+    background: var(--muted);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    animation: fadeIn 0.2s ease;
+  }
+  .quiz-explain.show { display: block; }
+  .quiz-explain a { color: var(--blue); text-decoration: none; font-weight: 500; }
+
+  .quiz-next {
+    display: none;
+    margin-top: 20px;
+    text-align: center;
+  }
+  .quiz-next.show { display: block; }
+
+  .quiz-summary { text-align: center; padding: 40px 0; }
+  .quiz-summary h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .quiz-summary p { font-size: 15px; color: var(--text-secondary); margin-bottom: 24px; }
+  .quiz-summary .missed { text-align: left; max-width: 500px; margin: 0 auto 24px; }
+  .quiz-summary .missed-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .quiz-summary .missed-item a { color: var(--blue); text-decoration: none; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Focus styles */
+  :focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  <span class="nav-title">Crypto Demystified</span>
+  <div class="mode-switcher" role="tablist">
+    <button class="mode-btn active" role="tab" aria-selected="true" onclick="switchMode('learn')">Learn</button>
+    <button class="mode-btn" role="tab" aria-selected="false" onclick="switchMode('reference')">Reference</button>
+    <button class="mode-btn" role="tab" aria-selected="false" onclick="switchMode('quiz')">Quiz</button>
+  </div>
+  <span class="progress-text" id="progressText"></span>
+</nav>
+
+<main>
+
+<!-- ==================== LEARN MODE ==================== -->
+<div class="view active" id="view-learn">
+
+  <div class="hero">
+    <h1>Encoding, Hashing & Encryption</h1>
+    <p class="subtitle">Everything you use every day but were afraid to ask about.</p>
+
+    <div class="pillars">
+      <div class="pillar">
+        <h3>Encoding</h3>
+        <p>Transforms data format. Anyone can reverse it. Not security.</p>
+      </div>
+      <div class="pillar hash">
+        <h3>Hashing</h3>
+        <p>Fingerprints data. Nobody can reverse it. One-way.</p>
+      </div>
+      <div class="pillar encrypt">
+        <h3>Encryption</h3>
+        <p>Locks data with a key. Only the key holder can reverse it.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEX -->
+  <article class="concept-card" id="card-hex">
+    <span class="card-category cat-encoding">Encoding</span>
+    <h2 class="card-title">Hex Encoding</h2>
+    <p class="card-oneliner">Represents every byte as two characters (0-9, a-f) — a human-readable view of raw binary.</p>
+
+    <div class="card-section">
+      <div class="card-section-label">Analogy</div>
+      <div class="analogy-box">Spelling out a phone number digit by digit. "Five-five-five-one-two-three-four." Same info, just laid out character by character.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Try It</div>
+      <div class="demo-box">
+        <div class="demo-label">Type something:</div>
+        <input class="demo-input" type="text" value="Hello" oninput="updateHex(this)" aria-label="Hex encoding input">
+        <div class="demo-output demo-flash" id="hex-output">48 65 6c 6c 6f</div>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">When to use</div>
+      <p>Reading binary in debuggers, log output, CSS color codes (#FF5733). Whenever you need to see raw bytes.</p>
+    </div>
+
+    <div class="card-section">
+      <div class="props-row">
+        <span class="prop-pill yes">Reversible</span>
+        <span class="prop-pill yes">Deterministic</span>
+        <span class="prop-pill">No key needed</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- BASE64 -->
+  <article class="concept-card" id="card-base64">
+    <span class="card-category cat-encoding">Encoding</span>
+    <h2 class="card-title">Base64 Encoding</h2>
+    <p class="card-oneliner">Converts binary data into text-safe characters (A-Z, a-z, 0-9, +, /) so it can travel through text-only channels.</p>
+
+    <div class="card-section">
+      <div class="card-section-label">Analogy</div>
+      <div class="analogy-box">Writing a message using only the letters on a standard typewriter. The message isn't hidden — you just rephrased it so the typewriter can handle it.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Try It</div>
+      <div class="demo-box">
+        <div class="demo-label">Type something (watch the = padding):</div>
+        <input class="demo-input" type="text" value="Hello, World!" oninput="updateBase64(this)" aria-label="Base64 encoding input">
+        <div class="demo-output demo-flash" id="b64-output">SGVsbG8sIFdvcmxkIQ==</div>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Common Mistake</div>
+      <div class="gotcha-box">Base64 is NOT encryption. Anyone can decode it instantly. When you see <code>Authorization: Basic dXNlcjpwYXNz</code>, that's just "user:pass" in Base64. It provides zero security.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">When to use</div>
+      <p>Embedding images in HTML (data URIs), sending binary in JSON, email attachments, HTTP Basic Auth headers.</p>
+    </div>
+
+    <div class="card-section">
+      <div class="props-row">
+        <span class="prop-pill yes">Reversible</span>
+        <span class="prop-pill yes">Deterministic</span>
+        <span class="prop-pill">No key needed</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- URL ENCODING -->
+  <article class="concept-card" id="card-url">
+    <span class="card-category cat-encoding">Encoding</span>
+    <h2 class="card-title">URL Encoding</h2>
+    <p class="card-oneliner">Replaces characters that have special meaning in URLs with %XX hex codes so they're treated as data, not syntax.</p>
+
+    <div class="card-section">
+      <div class="card-section-label">Analogy</div>
+      <div class="analogy-box">Like escape characters in code. When you write \" inside a string, you're telling the parser "this quote is data, not syntax." Same idea for URLs.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Try It</div>
+      <div class="demo-box">
+        <div class="demo-label">Type a URL with special characters:</div>
+        <input class="demo-input" type="text" value="hello world&foo=bar" oninput="updateUrl(this)" aria-label="URL encoding input">
+        <div class="demo-output demo-flash" id="url-output">hello%20world%26foo%3Dbar</div>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Common Mistake</div>
+      <div class="gotcha-box">Forgetting to encode & in a query value breaks parameter parsing. <code>?q=cats & dogs</code> won't work — the & starts a new parameter. You need <code>?q=cats%20%26%20dogs</code>.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="props-row">
+        <span class="prop-pill yes">Reversible</span>
+        <span class="prop-pill yes">Deterministic</span>
+        <span class="prop-pill">No key needed</span>
+      </div>
+    </div>
+  </article>
+
+  <div class="bridge">
+    Now that you see encoding is just translation — nothing secret about it —<br>
+    let's look at what happens when you need a one-way fingerprint&hellip;
+  </div>
+
+  <!-- SHA-256 -->
+  <article class="concept-card hash" id="card-sha256">
+    <span class="card-category cat-hashing">Hashing</span>
+    <h2 class="card-title">SHA-256</h2>
+    <p class="card-oneliner">Takes any data and produces a fixed 64-character fingerprint. Change one letter and the entire fingerprint changes.</p>
+
+    <div class="card-section">
+      <div class="card-section-label">Analogy</div>
+      <div class="analogy-box">A meat grinder. You put a steak in, you get ground beef out. You can verify a steak would produce that ground beef, but you can't reconstruct the steak.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Try It — The Avalanche Effect</div>
+      <div class="demo-box">
+        <div class="demo-pair">
+          <div>
+            <div class="demo-label">Input A:</div>
+            <input class="demo-input" type="text" value="password" oninput="updateSha()" id="sha-a" aria-label="SHA-256 input A">
+            <div class="demo-output demo-flash" id="sha-a-out" style="font-size:12px"></div>
+          </div>
+          <div>
+            <div class="demo-label">Input B:</div>
+            <input class="demo-input" type="text" value="Password" oninput="updateSha()" id="sha-b" aria-label="SHA-256 input B">
+            <div class="demo-output demo-flash" id="sha-b-out" style="font-size:12px"></div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:10px;text-align:center">Change one character. Watch the entire hash change.</p>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Common Mistake</div>
+      <div class="gotcha-box">SHA-256 alone is NOT safe for passwords. No salt means identical passwords produce identical hashes. Too fast — GPUs compute billions per second. Use bcrypt for passwords.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">When to use</div>
+      <p>File integrity checks (checksums), git commit hashes, content-addressable storage, deduplication.</p>
+    </div>
+
+    <div class="card-section">
+      <div class="props-row">
+        <span class="prop-pill no">Not reversible</span>
+        <span class="prop-pill yes">Deterministic</span>
+        <span class="prop-pill">No key needed</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- BCRYPT -->
+  <article class="concept-card hash" id="card-bcrypt">
+    <span class="card-category cat-hashing">Hashing</span>
+    <h2 class="card-title">bcrypt</h2>
+    <p class="card-oneliner">A deliberately slow hashing algorithm designed specifically for passwords, with a built-in random salt.</p>
+
+    <div class="card-section">
+      <div class="card-section-label">Analogy</div>
+      <div class="analogy-box">A lock that takes 1 second to try each key. If you have one key, 1 second is fine. If an attacker is trying a billion keys, they'll be dead before they finish.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">How It Works</div>
+      <div class="demo-box">
+        <div style="font-family:var(--font-mono);font-size:13px;line-height:1.8">
+          <div style="margin-bottom:8px;font-family:var(--font-body);font-size:13px;color:var(--text-secondary)">Same password "hunter2" hashed twice — different output each time:</div>
+          <div>$2b$12$<span style="color:var(--blue)">LJ3m4ys3Lk0TSwMC</span><span style="color:var(--green)">kVc8aOY2rGJsVU5X3MQz6...</span></div>
+          <div>$2b$12$<span style="color:var(--blue)">9Q8fN7mP3xR2tY0w</span><span style="color:var(--green)">K5v1bOZJ8hG6dA4cE3nL1...</span></div>
+          <div style="margin-top:12px;font-family:var(--font-body);font-size:12px;color:var(--text-secondary)">
+            $2b = algorithm &nbsp;|&nbsp; $12 = cost factor (2^12 rounds) &nbsp;|&nbsp;
+            <span style="color:var(--blue)">blue = salt</span> &nbsp;|&nbsp;
+            <span style="color:var(--green)">green = hash</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Common Mistake</div>
+      <div class="gotcha-box">Never store passwords as plain SHA-256 or MD5. bcrypt is intentionally slow (tunable), includes automatic salting so identical passwords get different hashes, and is purpose-built for this one job.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="props-row">
+        <span class="prop-pill no">Not reversible</span>
+        <span class="prop-pill no">Not deterministic (salt)</span>
+        <span class="prop-pill">No key (salt embedded)</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- HMAC -->
+  <article class="concept-card hash" id="card-hmac">
+    <span class="card-category cat-hashing">Hashing</span>
+    <h2 class="card-title">HMAC</h2>
+    <p class="card-oneliner">A hash that requires a secret key — proves data hasn't been tampered with AND came from someone who knows the key.</p>
+
+    <div class="card-section">
+      <div class="card-section-label">Analogy</div>
+      <div class="analogy-box">A wax seal on a letter. Everyone can read the letter. But the seal proves it came from the king and wasn't opened en route.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Try It</div>
+      <div class="demo-box">
+        <div class="demo-pair">
+          <div>
+            <div class="demo-label">Message:</div>
+            <input class="demo-input" type="text" value="webhook payload" oninput="updateHmac()" id="hmac-msg" aria-label="HMAC message input">
+          </div>
+          <div>
+            <div class="demo-label">Secret key:</div>
+            <input class="demo-input" type="text" value="whsec_abc123" oninput="updateHmac()" id="hmac-key" aria-label="HMAC key input">
+          </div>
+        </div>
+        <div class="demo-output demo-flash" id="hmac-output" style="margin-top:10px;font-size:12px"></div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;text-align:center">Change the message OR the key — the HMAC changes completely. Without the key, you can't forge it.</p>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">When to use</div>
+      <p>Webhook signature verification (Stripe, GitHub), JWT signing (HS256 = HMAC + SHA-256), API request signing (AWS Signature V4).</p>
+    </div>
+
+    <div class="card-section">
+      <div class="props-row">
+        <span class="prop-pill no">Not reversible</span>
+        <span class="prop-pill yes">Deterministic</span>
+        <span class="prop-pill key">Requires secret key</span>
+      </div>
+    </div>
+  </article>
+
+  <div class="bridge">
+    Encoding reformats. Hashing fingerprints. Now let's see what brings them together —<br>
+    and what actual encryption looks like&hellip;
+  </div>
+
+  <!-- JWT -->
+  <article class="concept-card encrypt" id="card-jwt">
+    <span class="card-category cat-encryption">Applied</span>
+    <h2 class="card-title">JWT (JSON Web Token)</h2>
+    <p class="card-oneliner">A token that bundles a JSON payload with a signature. Combines Base64 encoding and HMAC signing into one package.</p>
+
+    <div class="card-section">
+      <div class="card-section-label">Analogy</div>
+      <div class="analogy-box">A transparent ID badge with a holographic seal. Everyone can read your name and role. The seal proves the badge was issued by your company and wasn't forged. But the info itself is right there for anyone to see.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Decode a JWT</div>
+      <div class="demo-box">
+        <div class="demo-label">Paste a JWT (or use this sample):</div>
+        <textarea class="demo-input" id="jwt-input" oninput="updateJwt()" rows="3" style="resize:vertical" aria-label="JWT input">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</textarea>
+        <div class="jwt-parts" id="jwt-parts">
+          <div class="jwt-part jwt-header">
+            <div class="jwt-part-label">Header</div>
+            <div id="jwt-header-out"></div>
+          </div>
+          <div class="jwt-part jwt-payload">
+            <div class="jwt-part-label">Payload (anyone can read this!)</div>
+            <div id="jwt-payload-out"></div>
+          </div>
+          <div class="jwt-part jwt-signature">
+            <div class="jwt-part-label">Signature (proves it wasn't tampered)</div>
+            <div id="jwt-sig-out"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Common Mistake</div>
+      <div class="gotcha-box">JWTs are signed, NOT encrypted. The payload is just Base64 — anyone can decode it and read the contents. Don't put secrets or sensitive PII in the payload.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="props-row">
+        <span class="prop-pill yes">Payload: reversible (Base64)</span>
+        <span class="prop-pill no">Signature: not reversible</span>
+        <span class="prop-pill key">Requires key for signing</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- AES -->
+  <article class="concept-card encrypt" id="card-aes">
+    <span class="card-category cat-encryption">Encryption</span>
+    <h2 class="card-title">AES (Symmetric Encryption)</h2>
+    <p class="card-oneliner">Same key encrypts and decrypts. Fast. The workhorse of actual encryption.</p>
+
+    <div class="card-section">
+      <div class="card-section-label">Analogy</div>
+      <div class="analogy-box">A diary with a combination lock. You write in it and lock it. Anyone with the combination can read it. The challenge: how do you share the combination without someone overhearing?</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">When to use</div>
+      <p>Encrypting data at rest (database fields, disk encryption), encrypting data in transit (TLS uses AES), encrypting backups. Whenever you need actual secrecy and both sides share the key.</p>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Key Point</div>
+      <div class="gotcha-box">The hard problem isn't the encryption — it's key management. You must securely store and distribute the key. If the key leaks, everything encrypted with it is compromised.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="props-row">
+        <span class="prop-pill yes">Reversible (with key)</span>
+        <span class="prop-pill no">Not deterministic (IV)</span>
+        <span class="prop-pill key">Same key encrypts + decrypts</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- RSA -->
+  <article class="concept-card encrypt" id="card-rsa">
+    <span class="card-category cat-encryption">Encryption</span>
+    <h2 class="card-title">RSA (Public-Key Encryption)</h2>
+    <p class="card-oneliner">Two keys: public encrypts, private decrypts. Solves the "how do I share a key securely" problem.</p>
+
+    <div class="card-section">
+      <div class="card-section-label">Analogy</div>
+      <div class="analogy-box">A mailbox. Anyone can drop a letter through the slot (encrypt with public key). Only the owner with the mailbox key can open it and read the letters (decrypt with private key).</div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">When to use</div>
+      <p>HTTPS/TLS handshake, SSH keys (<code>ssh-keygen</code>), JWT signing with RS256, code signing, PGP email.</p>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-label">Key Point</div>
+      <div class="gotcha-box">RSA is slow. In practice, it's used to exchange an AES key, then AES does the bulk encryption. This is how HTTPS works — RSA for the handshake, AES for the data. You almost never encrypt large data directly with RSA.</div>
+    </div>
+
+    <div class="card-section">
+      <div class="props-row">
+        <span class="prop-pill yes">Reversible (with private key)</span>
+        <span class="prop-pill key">Key pair (public + private)</span>
+        <span class="prop-pill">Slow — use for key exchange</span>
+      </div>
+    </div>
+  </article>
+
+</div>
+
+<!-- ==================== REFERENCE MODE ==================== -->
+<div class="view" id="view-reference">
+
+  <h2 style="font-size:22px;font-weight:600;margin-bottom:6px">Quick Reference</h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px">Click any row to expand details.</p>
+
+  <div class="ref-table-wrap">
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Concept</th>
+          <th>Type</th>
+          <th>What It Does</th>
+          <th>Reversible?</th>
+          <th>Key?</th>
+          <th>Use When&hellip;</th>
+        </tr>
+      </thead>
+      <tbody id="ref-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="decision-tree">
+    <h2>I need to&hellip;</h2>
+    <p class="subtitle">Pick your scenario — get the right tool.</p>
+    <div id="dt-container"></div>
+  </div>
+
+</div>
+
+<!-- ==================== QUIZ MODE ==================== -->
+<div class="view" id="view-quiz">
+  <div id="quiz-container"></div>
+</div>
+
+</main>
+
+<script>
+// ===== DATA =====
+const refData = [
+  { name:'Hex', type:'Encoding', color:'blue', what:'Displays bytes as 0-9, a-f pairs', rev:'Yes', key:'No', when:'Debug output, binary logs, color codes', card:'hex' },
+  { name:'Base64', type:'Encoding', color:'blue', what:'Binary → text-safe characters (A-Z, a-z, 0-9, +, /)', rev:'Yes', key:'No', when:'Binary in JSON, images in HTML, email', card:'base64' },
+  { name:'URL Encoding', type:'Encoding', color:'blue', what:'Replaces URL-unsafe chars with %XX', rev:'Yes', key:'No', when:'Query params, form data, redirect URLs', card:'url' },
+  { name:'SHA-256', type:'Hashing', color:'green', what:'One-way fingerprint, always 64 hex chars', rev:'No', key:'No', when:'File integrity, git hashes, dedup', card:'sha256' },
+  { name:'bcrypt', type:'Hashing', color:'green', what:'Slow, salted, password-specific hash', rev:'No', key:'No', when:'Storing passwords — and nothing else', card:'bcrypt' },
+  { name:'HMAC', type:'Hashing', color:'green', what:'Hash with a secret key for auth + integrity', rev:'No', key:'Yes', when:'Webhook verification, API signing', card:'hmac' },
+  { name:'JWT', type:'Applied', color:'amber', what:'Base64 payload + HMAC/RSA signature', rev:'Payload: yes', key:'Yes', when:'Auth tokens, stateless sessions', card:'jwt' },
+  { name:'AES', type:'Encryption', color:'amber', what:'Symmetric: same key encrypts & decrypts', rev:'With key', key:'Yes (shared)', when:'Data at rest, TLS bulk encryption', card:'aes' },
+  { name:'RSA', type:'Encryption', color:'amber', what:'Asymmetric: public encrypts, private decrypts', rev:'With key', key:'Yes (pair)', when:'HTTPS handshake, SSH, code signing', card:'rsa' },
+];
+
+const dtData = [
+  { q:'Store a password', a:'bcrypt', detail:'Slow, salted, one-way. Purpose-built for passwords.', card:'bcrypt' },
+  { q:'Verify a file hasn\'t been modified', a:'SHA-256', detail:'Compare the hash fingerprint. If it matches, the file is intact.', card:'sha256' },
+  { q:'Verify a webhook is really from Stripe', a:'HMAC', detail:'Recompute HMAC with your shared secret. If it matches their signature, it\'s authentic.', card:'hmac' },
+  { q:'Send binary data in JSON', a:'Base64', detail:'Encodes binary into text-safe characters. Not security — just format conversion.', card:'base64' },
+  { q:'Put user input in a URL', a:'URL encoding', detail:'Escapes special characters so they\'re treated as data, not URL syntax.', card:'url' },
+  { q:'Create a stateless auth token', a:'JWT', detail:'Bundles claims with a signature. Server can verify without a database lookup.', card:'jwt' },
+  { q:'Encrypt sensitive database fields', a:'AES', detail:'Symmetric encryption. Fast. Same key encrypts and decrypts.', card:'aes' },
+  { q:'Let users send you encrypted data without a shared secret', a:'RSA', detail:'Public key encrypts, only your private key decrypts. Solves the key distribution problem.', card:'rsa' },
+];
+
+const quizData = [
+  { q:'You\'re building an API. A colleague suggests storing user passwords by SHA-256 hashing them. Is this a good approach?',
+    opts:['Yes — SHA-256 is a strong hash','No — use bcrypt instead','Yes — but add a salt first','No — use Base64 encoding'],
+    correct:1, explain:'SHA-256 is too fast — attackers can brute-force billions per second. bcrypt is deliberately slow and includes automatic salting.', card:'bcrypt' },
+  { q:'Your frontend needs to display a small image returned from a JSON API. How should the API include the image data?',
+    opts:['AES encrypt it','SHA-256 hash it','Base64 encode it','URL encode it'],
+    correct:2, explain:'JSON is text-only. Base64 converts binary to text-safe characters. This is encoding, not encryption — the image isn\'t secret.', card:'base64' },
+  { q:'You receive a webhook from a payment provider with an X-Signature header. What cryptographic operation verifies the request is authentic?',
+    opts:['Base64 decode the payload','SHA-256 hash the payload','HMAC signature verification','JWT validation'],
+    correct:2, explain:'The provider computed an HMAC using your shared secret. You recompute and compare. This proves authenticity and integrity.', card:'hmac' },
+  { q:'A junior dev says: "Don\'t worry, the JWT is encrypted so no one can read the user\'s email in the token." Should you worry?',
+    opts:['No — JWTs are encrypted by default','Yes — JWTs are signed, not encrypted','No — the signature protects the data','Yes — but only if using HS256'],
+    correct:1, explain:'Standard JWTs are signed, NOT encrypted. The payload is just Base64 — anyone can decode and read it. The signature only prevents tampering.', card:'jwt' },
+  { q:'Your search URL is /search?q=cats & dogs and it returns no results. Why?',
+    opts:['The server doesn\'t support spaces','The & is being parsed as a parameter separator','The URL needs Base64 encoding','The search engine is broken'],
+    correct:1, explain:'The unencoded & starts a new query parameter. You need: /search?q=cats%20%26%20dogs. URL encoding treats special chars as data.', card:'url' },
+  { q:'You need to verify a downloaded file matches what the author published. Which do you use?',
+    opts:['bcrypt the file','Base64 decode the file','SHA-256 checksum','AES decrypt the file'],
+    correct:2, explain:'SHA-256 produces a deterministic fingerprint. Compare your hash with the published hash — if they match, the file is intact.', card:'sha256' },
+  { q:'Your app needs to encrypt health records in a database. Only your server reads and writes them. AES or RSA?',
+    opts:['RSA — it\'s more secure','AES — same server encrypts and decrypts','Either works equally well','Neither — use bcrypt'],
+    correct:1, explain:'Since the same server encrypts and decrypts, there\'s no key-exchange problem. AES is far faster than RSA for bulk data.', card:'aes' },
+  { q:'You see this code: const encrypted = btoa(JSON.stringify(userData)). A comment says "encrypt user data." What\'s wrong?',
+    opts:['Nothing — btoa encrypts data','btoa is Base64 encoding, not encryption','The JSON.stringify is unnecessary','It should use atob instead'],
+    correct:1, explain:'btoa() is Base64 encoding — anyone can reverse it with atob(). It provides zero confidentiality. The variable name and comment are dangerously misleading.', card:'base64' },
+  { q:'Two users have the same password "hunter2". After hashing with bcrypt, should their stored hashes be identical?',
+    opts:['Yes — same input, same output','No — bcrypt uses a random salt each time','Yes — unless you use a pepper','No — bcrypt uses the username as salt'],
+    correct:1, explain:'bcrypt generates a random salt for each operation. Same password → different hashes. If they were identical, cracking one would crack both.', card:'bcrypt' },
+  { q:'You need a unique, fixed-length identifier for content to use as a cache key. Same content should always produce the same key. What do you use?',
+    opts:['bcrypt','SHA-256','Base64','UUID'],
+    correct:1, explain:'SHA-256 is deterministic (same content = same hash), fixed-length, and practically collision-free. This is content-addressable storage — same pattern Git uses.', card:'sha256' },
+];
+
+// ===== MODE SWITCHING =====
+let currentMode = 'learn';
+const scrollPositions = { learn: 0, reference: 0, quiz: 0 };
+
+function switchMode(mode) {
+  scrollPositions[currentMode] = window.scrollY;
+  currentMode = mode;
+
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + mode).classList.add('active');
+
+  document.querySelectorAll('.mode-btn').forEach((btn, i) => {
+    const modes = ['learn','reference','quiz'];
+    btn.classList.toggle('active', modes[i] === mode);
+    btn.setAttribute('aria-selected', modes[i] === mode);
+  });
+
+  document.getElementById('progressBar').style.display = mode === 'learn' ? '' : 'none';
+  document.getElementById('progressText').style.display = mode === 'learn' ? '' : 'none';
+
+  window.location.hash = mode;
+  requestAnimationFrame(() => window.scrollTo(0, scrollPositions[mode]));
+}
+
+// ===== INTERACTIVE DEMOS =====
+function updateHex(el) {
+  const out = Array.from(new TextEncoder().encode(el.value))
+    .map(b => b.toString(16).padStart(2, '0')).join(' ');
+  flash('hex-output', out || '(empty)');
+}
+
+function updateBase64(el) {
+  try { flash('b64-output', btoa(el.value) || '(empty)'); }
+  catch(e) { flash('b64-output', '(contains non-Latin1 chars — use TextEncoder for Unicode)'); }
+}
+
+function updateUrl(el) {
+  flash('url-output', encodeURIComponent(el.value) || '(empty)');
+}
+
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function updateSha() {
+  const a = document.getElementById('sha-a').value;
+  const b = document.getElementById('sha-b').value;
+  flash('sha-a-out', await sha256(a));
+  flash('sha-b-out', await sha256(b));
+}
+
+async function hmacSha256(msg, key) {
+  const enc = new TextEncoder();
+  const k = await crypto.subtle.importKey('raw', enc.encode(key), { name:'HMAC', hash:'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', k, enc.encode(msg));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function updateHmac() {
+  const msg = document.getElementById('hmac-msg').value;
+  const key = document.getElementById('hmac-key').value;
+  if (!key) { flash('hmac-output', '(enter a key)'); return; }
+  flash('hmac-output', await hmacSha256(msg, key));
+}
+
+function b64urlDecode(str) {
+  str = str.replace(/-/g,'+').replace(/_/g,'/');
+  while (str.length % 4) str += '=';
+  try { return JSON.parse(atob(str)); } catch(e) { return null; }
+}
+
+function updateJwt() {
+  const raw = document.getElementById('jwt-input').value.trim();
+  const parts = raw.split('.');
+  const hdr = document.getElementById('jwt-header-out');
+  const pay = document.getElementById('jwt-payload-out');
+  const sig = document.getElementById('jwt-sig-out');
+
+  if (parts.length !== 3) {
+    hdr.textContent = '(need 3 dot-separated parts)';
+    pay.textContent = ''; sig.textContent = '';
+    return;
+  }
+  const h = b64urlDecode(parts[0]);
+  const p = b64urlDecode(parts[1]);
+  hdr.textContent = h ? JSON.stringify(h, null, 2) : '(invalid Base64)';
+  pay.textContent = p ? JSON.stringify(p, null, 2) : '(invalid Base64)';
+  sig.textContent = parts[2].substring(0, 40) + '...';
+}
+
+function flash(id, text) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.style.backgroundColor = '#FDF3E4';
+  setTimeout(() => el.style.backgroundColor = '', 300);
+}
+
+// ===== PROGRESS BAR =====
+const cards = ['hex','base64','url','sha256','bcrypt','hmac','jwt','aes','rsa'];
+function updateProgress() {
+  if (currentMode !== 'learn') return;
+  const viewTop = window.scrollY + 200;
+  let visible = 0;
+  cards.forEach(id => {
+    const el = document.getElementById('card-' + id);
+    if (el && el.offsetTop < viewTop) visible++;
+  });
+  const pct = Math.min(100, Math.round((visible / cards.length) * 100));
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = visible + ' of ' + cards.length;
+}
+
+// ===== SCROLL SHADOW =====
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 5);
+  updateProgress();
+});
+
+// ===== REFERENCE TABLE =====
+function buildRef() {
+  const tbody = document.getElementById('ref-tbody');
+  const colorMap = { blue:'cat-encoding', green:'cat-hashing', amber:'cat-encryption' };
+  const bgMap = { blue:'var(--blue-bg)', green:'var(--green-bg)', amber:'var(--amber-bg)' };
+  const fgMap = { blue:'var(--blue)', green:'var(--green)', amber:'var(--amber)' };
+
+  refData.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${r.name}</strong></td>
+      <td><span class="type-pill" style="background:${bgMap[r.color]};color:${fgMap[r.color]}">${r.type}</span></td>
+      <td>${r.what}</td>
+      <td>${r.rev}</td>
+      <td>${r.key}</td>
+      <td>${r.when}</td>
+    `;
+    tr.addEventListener('click', () => {
+      switchMode('learn');
+      setTimeout(() => {
+        document.getElementById('card-' + r.card).scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 50);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== DECISION TREE =====
+function buildDT() {
+  const container = document.getElementById('dt-container');
+  dtData.forEach((d, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'dt-btn';
+    btn.textContent = d.q;
+
+    const answer = document.createElement('div');
+    answer.className = 'dt-answer';
+    answer.innerHTML = `<strong>${d.a}</strong> — ${d.detail} <a href="#" onclick="event.preventDefault();switchMode('learn');setTimeout(()=>document.getElementById('card-${d.card}').scrollIntoView({behavior:'smooth',block:'start'}),50)">Learn more &rarr;</a>`;
+
+    btn.addEventListener('click', () => {
+      answer.classList.toggle('show');
+    });
+    container.appendChild(btn);
+    container.appendChild(answer);
+  });
+}
+
+// ===== QUIZ =====
+let quizState = { started: false, current: 0, score: 0, answers: [], order: [] };
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function renderQuiz() {
+  const c = document.getElementById('quiz-container');
+
+  if (!quizState.started) {
+    c.innerHTML = `
+      <div class="quiz-intro">
+        <h2>Test Your Knowledge</h2>
+        <p>${quizData.length} scenario-based questions. No timer. No pressure.<br>Pick the right tool for the job.</p>
+        <button class="btn-primary" onclick="startQuiz()">Start Quiz</button>
+      </div>`;
+    return;
+  }
+
+  if (quizState.current >= quizData.length) {
+    const missed = quizState.answers
+      .map((a, i) => a !== quizData[quizState.order[i]].correct ? quizState.order[i] : -1)
+      .filter(i => i >= 0);
+
+    let missedHtml = '';
+    if (missed.length > 0) {
+      missedHtml = '<div class="missed"><strong>Review these:</strong>' +
+        missed.map(i => `<div class="missed-item"><a href="#" onclick="event.preventDefault();switchMode('learn');setTimeout(()=>document.getElementById('card-${quizData[i].card}').scrollIntoView({behavior:'smooth',block:'start'}),50)">${refData.find(r=>r.card===quizData[i].card)?.name || quizData[i].card}</a></div>`).join('') +
+        '</div>';
+    }
+
+    c.innerHTML = `
+      <div class="quiz-summary">
+        <h2>You got ${quizState.score} out of ${quizData.length}</h2>
+        <p>${quizState.score === quizData.length ? 'Perfect score!' : 'Not bad — review the ones you missed below.'}</p>
+        ${missedHtml}
+        <button class="btn-primary" onclick="startQuiz()">Try Again</button>
+        <button class="btn-secondary" onclick="switchMode('learn')">Review in Learn Mode</button>
+      </div>`;
+    return;
+  }
+
+  const qi = quizState.order[quizState.current];
+  const q = quizData[qi];
+  const answered = quizState.answers[quizState.current] !== undefined;
+
+  c.innerHTML = `
+    <div class="quiz-card">
+      <div class="quiz-meta">
+        <span>Question ${quizState.current + 1} of ${quizData.length}</span>
+        <span>${quizState.score}/${quizState.current}${quizState.current > 0 ? ' so far' : ''}</span>
+      </div>
+      <div class="quiz-question">${q.q}</div>
+      <div id="quiz-opts">
+        ${q.opts.map((o, i) => {
+          let cls = 'quiz-option';
+          if (answered) {
+            cls += ' answered';
+            if (i === q.correct) cls += ' correct';
+            else if (i === quizState.answers[quizState.current] && i !== q.correct) cls += ' wrong';
+          }
+          return `<button class="${cls}" ${answered ? 'disabled' : ''} onclick="answerQuiz(${i})">${o}</button>`;
+        }).join('')}
+      </div>
+      <div class="quiz-explain ${answered ? 'show' : ''}" id="quiz-explain">
+        ${answered ? q.explain + ` <a href="#" onclick="event.preventDefault();switchMode('learn');setTimeout(()=>document.getElementById('card-${q.card}').scrollIntoView({behavior:'smooth',block:'start'}),50)">Review this concept &rarr;</a>` : ''}
+      </div>
+      <div class="quiz-next ${answered ? 'show' : ''}">
+        <button class="btn-primary" onclick="nextQuiz()">${quizState.current < quizData.length - 1 ? 'Next Question →' : 'See Results'}</button>
+      </div>
+    </div>`;
+}
+
+function startQuiz() {
+  quizState = { started: true, current: 0, score: 0, answers: [], order: shuffleArray([...Array(quizData.length).keys()]) };
+  renderQuiz();
+}
+
+function answerQuiz(i) {
+  if (quizState.answers[quizState.current] !== undefined) return;
+  const qi = quizState.order[quizState.current];
+  quizState.answers[quizState.current] = i;
+  if (i === quizData[qi].correct) quizState.score++;
+  renderQuiz();
+}
+
+function nextQuiz() {
+  quizState.current++;
+  renderQuiz();
+}
+
+// ===== INIT =====
+buildRef();
+buildDT();
+renderQuiz();
+updateSha();
+updateHmac();
+updateJwt();
+updateProgress();
+
+// Handle hash-based mode on load
+const hash = window.location.hash.replace('#','');
+if (['learn','reference','quiz'].includes(hash)) switchMode(hash);
+</script>
+
+</body>
+</html>

@@ -25,3 +25,6 @@ build/
 
 # OS
 .DS_Store
+
+# Ephemeral AI-agent scratch (durable docs live in docs/)
+.llm/

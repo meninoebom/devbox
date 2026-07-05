@@ -57,6 +57,12 @@ Notes:
   `uv.lock` drifts on `uv run`, and there are no tests yet. `check:api` surfaces the ruff
   findings honestly; clean these up separately.
 - **CI gotcha:** never pipe `mise run check` through `tail` — it masks mise's exit code.
+- **Workbench lab specimen (Postgres):** the Workbench, and only the Workbench, needs a
+  disposable Postgres lab. `mise run lab:up` starts it (docker compose, host port **5435**
+  to avoid colliding with other local Postgres instances), `lab:reset` re-seeds it (needs
+  `down -v` — Postgres init scripts only run on an empty volume). Everything else in DevBox
+  stays zero-config SQLite and works with no Docker running. Seed: 5k authors / 500k books,
+  no secondary indexes (the index dial is the lesson).
 
 ## Development Workflow
 - Simple changes: implement directly
@@ -69,7 +75,22 @@ Notes:
 - Keep commits focused
 
 ## Key Patterns
-- **Inspector Panel:** Every workshop has an inspector that shows internals
-- **Request Tracing:** Middleware captures full request lifecycle for display
-- **Type Bridge:** Pydantic models → OpenAPI → TypeScript types
-- **Workshop Pattern:** Each workshop is self-contained with its own routes, components, and API endpoints
+- **Inspector Panel:** Every workshop has an inspector that shows internals.
+- **Universal Trace:** A `Trace` (parent) owns ordered `TraceEvent` spans, each on a
+  `lane` (http, sql, query_plan now; cache/llm/tool/embedding/memory/loop reserved for
+  later phases). Both the tracing middleware and the Workbench write through the
+  `TraceStore` service; the Inspector renders events grouped by lane. Event `detail` is a
+  schemaless JSON column validated per-lane at the write boundary
+  (`schemas/trace.py::validate_detail`). Replaced the old flat `RequestTrace`.
+- **Workbench (SQL-first):** paste SQL → `LabRunner` (asyncpg; read-only tx +
+  statement_timeout + row cap) runs it against the lab specimen → `PlanParser` normalizes
+  EXPLAIN JSON into a plan tree with hot/misestimate highlights → plan graph. Records a
+  `workbench_run` trace. Setup DDL (e.g. CREATE INDEX) runs first and persists, so the
+  index dial is real.
+- **Type Bridge:** Pydantic models → OpenAPI → TypeScript types.
+- **Workshop Pattern:** Each workshop is self-contained with its own routes, components, and API endpoints.
+
+## Design & plan of record
+- Full product design (v3, panel-reviewed): `docs/design/one-glass-box.md`.
+- Active build plan (plan-one-build-one cadence, no GitHub issues): `.llm/active-plan.md`.
+- Session gotchas awaiting promotion: `.llm/raw-learnings.md`.

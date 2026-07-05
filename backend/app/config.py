@@ -16,5 +16,12 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     UPLOAD_DIR: str = str(BASE_DIR / "uploads")
 
+    # The Workbench lab specimen (see docker-compose.yml). A plain asyncpg DSN
+    # (no +asyncpg driver suffix — the LabRunner uses asyncpg directly). Only the
+    # Workbench needs this running; the rest of the app is unaffected when it is down.
+    LAB_DSN: str = "postgresql://devbox_lab:devbox_lab@localhost:5435/devbox_lab"
+    LAB_STATEMENT_TIMEOUT_MS: int = 5000
+    LAB_ROW_CAP: int = 500
+
 
 settings = Settings()

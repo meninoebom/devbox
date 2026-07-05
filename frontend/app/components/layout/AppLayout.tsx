@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router";
-import { InspectorProvider, useInspector } from "~/components/inspector/InspectorContext";
+import { InspectorProvider, useInspector, httpDetail } from "~/components/inspector/InspectorContext";
 import { InspectorPanel } from "~/components/inspector/InspectorPanel";
 import { Button } from "~/components/ui/button";
 import {
@@ -11,9 +11,18 @@ import {
   Pencil,
   Layers,
   Box,
+  FlaskConical,
+  BookOpen,
 } from "lucide-react";
 
 const workshopGroups = [
+  {
+    label: "Bench",
+    items: [
+      { to: "/workbench", icon: FlaskConical, label: "Workbench" },
+      { to: "/guides", icon: BookOpen, label: "Field Guides" },
+    ],
+  },
   {
     label: "Foundations",
     items: [
@@ -41,6 +50,7 @@ const workshopGroups = [
 
 function InspectorToggle() {
   const { setOpen, trace } = useInspector();
+  const status = httpDetail(trace)?.response_status;
   return (
     <Button
       onClick={() => setOpen(true)}
@@ -48,7 +58,7 @@ function InspectorToggle() {
       size="sm"
       className="fixed bottom-4 right-4 z-50 font-mono text-xs bg-[#1a1a1a] border-[#2a2a2a] text-amber-400 hover:bg-[#2a2a2a] hover:text-amber-300"
     >
-      {trace ? `Inspector [${trace.status_code}]` : "Inspector"}
+      {status ? `Inspector [${status}]` : "Inspector"}
     </Button>
   );
 }

@@ -1,0 +1,29 @@
+# The lab specimen — a disposable Postgres the Workbench runs arbitrary SQL against.
+# Nothing else in DevBox needs this; the app's own database is still zero-config
+# SQLite. Bring it up only for the Workbench:  docker compose up -d lab-postgres
+#
+# Reset the world (re-run the seed):  docker compose down -v && docker compose up -d lab-postgres
+# The seed only runs on an empty volume, so `down -v` (which drops the volume) is
+# how you get a fresh world.
+
+services:
+  lab-postgres:
+    image: postgres:16-alpine
+    container_name: devbox-lab-postgres
+    environment:
+      POSTGRES_USER: devbox_lab
+      POSTGRES_PASSWORD: devbox_lab
+      POSTGRES_DB: devbox_lab
+    ports:
+      - "5435:5432" # 5435 on the host to avoid colliding with other local Postgres instances
+    volumes:
+      - lab_pgdata:/var/lib/postgresql/data
+      - ./backend/lab/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devbox_lab -d devbox_lab"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  lab_pgdata:
