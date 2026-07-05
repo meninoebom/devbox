@@ -27,9 +27,7 @@ class RunRequest(BaseModel):
 
 @router.post("/run")
 async def run_query(body: RunRequest, db: AsyncSession = Depends(get_db)):
-    result = await lab_runner.run(
-        body.sql, body.setup_sql, allow_writes=body.allow_writes
-    )
+    result = await lab_runner.run(body.sql, body.setup_sql, allow_writes=body.allow_writes)
 
     if not result.specimen_up:
         return {"specimen_up": False, "error": result.error}

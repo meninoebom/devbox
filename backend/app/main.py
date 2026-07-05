@@ -1,6 +1,7 @@
 """DevBox API — an interactive engineering playground that teaches how web apps work."""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -46,8 +47,6 @@ add_cors_middleware(app)
 app.add_middleware(TracingMiddleware)
 
 # --- Static files for uploads ---
-from pathlib import Path
-
 upload_dir = Path(settings.UPLOAD_DIR)
 upload_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
@@ -74,7 +73,7 @@ async def root():
             "inspector": "/api/traces — View captured request traces",
             "auth_lab": "/api/auth — JWT registration, login, token inspection",
             "form_workshop": "/api/projects — File upload and multipart forms",
-            "http_observatory": "/api/workshop/http — Echo, status codes, delays, content negotiation",
+            "http_observatory": "/api/workshop/http — Echo, status codes, delays, negotiation",
             "type_bridge": "/api/workshop/types — Schema comparison, validation, type coercion",
             "meta": "/api/meta — Source code, routes, and model introspection",
         },

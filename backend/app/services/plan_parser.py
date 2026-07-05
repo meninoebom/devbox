@@ -53,9 +53,7 @@ def parse(explain_json: Any) -> dict:
         loops = node.get("Actual Loops")
         actual_total = node.get("Actual Total Time")
         inclusive_ms = (
-            actual_total * loops
-            if actual_total is not None and loops is not None
-            else None
+            actual_total * loops if actual_total is not None and loops is not None else None
         )
 
         children = [walk(c) for c in node.get("Plans", [])]
@@ -95,7 +93,7 @@ def parse(explain_json: Any) -> dict:
 
     root = walk(plan)
 
-    hot = max(flat, key=lambda n: (n["_exclusive_ms"] or -1.0), default=None)
+    hot = max(flat, key=lambda n: n["_exclusive_ms"] or -1.0, default=None)
     mis = max(flat, key=lambda n: n["misestimate_ratio"], default=None)
     # Only flag a misestimate if it is actually meaningful (>= 10x off).
     if hot is not None:

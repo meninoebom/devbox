@@ -61,6 +61,26 @@ run = "docker compose down"
 description = "Drop and re-seed the lab world (destroys the volume, re-runs seed.sql)"
 run = "docker compose down -v && docker compose up -d lab-postgres"
 
+[tasks."test:api"]
+description = "Backend unit + spec-assertion tests (pytest)"
+dir = "backend"
+run = "uv run --extra dev pytest -q"
+
+[tasks.smoke]
+description = "Boot the app in-process and assert real behavior (needs lab:up)"
+dir = "backend"
+run = "uv run --extra dev python scripts/smoke.py"
+
+[tasks.gate]
+description = "The hard gate: typecheck + ruff + pytest + smoke. Green or the loop halts."
+# Sequential, fail-fast. Run `mise run lab:up` first (smoke needs the specimen).
+run = [
+  "mise run check:web",
+  "mise run check:api",
+  "mise run test:api",
+  "mise run smoke",
+]
+
 [tasks.build]
 description = "Production build of the React Router frontend"
 dir = "frontend"

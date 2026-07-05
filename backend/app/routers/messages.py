@@ -1,7 +1,7 @@
 """Full CRUD for messages — the Data Pipeline workshop's primary entity."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -45,9 +45,7 @@ async def create_message(data: MessageCreate, db: AsyncSession = Depends(get_db)
 
 
 @router.put("/{message_id}", response_model=MessageRead)
-async def update_message(
-    message_id: int, data: MessageUpdate, db: AsyncSession = Depends(get_db)
-):
+async def update_message(message_id: int, data: MessageUpdate, db: AsyncSession = Depends(get_db)):
     """Update an existing message. Only provided fields are changed."""
     msg = await db.get(Message, message_id)
     if not msg:

@@ -2,7 +2,7 @@
 Pydantic schemas, SQLAlchemy models, and TypeScript types."""
 
 from fastapi import APIRouter, Query
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
 from app.models.message import Message
 from app.models.project import Project
@@ -58,7 +58,9 @@ async def get_schemas():
 
 
 @router.post("/validate")
-async def validate_data(model_name: str = Query(..., description="Pydantic schema name"), body: dict = {}):
+async def validate_data(
+    model_name: str = Query(..., description="Pydantic schema name"), body: dict = {}
+):
     """Send any JSON payload and get back detailed Pydantic validation results.
 
     Shows coercion (e.g. string "42" → int 42), missing fields, type errors, etc.
@@ -81,7 +83,11 @@ async def compare_types():
     at the validation layer vs the persistence layer.
     """
     comparisons = {}
-    mapping = {"Message": ("MessageRead", Message), "Project": ("ProjectRead", Project), "User": ("UserRead", User)}
+    mapping = {
+        "Message": ("MessageRead", Message),
+        "Project": ("ProjectRead", Project),
+        "User": ("UserRead", User),
+    }
     for entity, (schema_name, sa_model) in mapping.items():
         comparisons[entity] = {
             "pydantic_schema": _SCHEMAS[schema_name].model_json_schema(),

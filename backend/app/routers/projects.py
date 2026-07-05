@@ -1,6 +1,5 @@
 """Project CRUD with file upload for the Form Workshop."""
 
-import json
 import uuid
 from pathlib import Path
 

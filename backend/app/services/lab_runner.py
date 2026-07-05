@@ -78,16 +78,12 @@ async def run(
         # rows and timing. Read-only transaction unless writes are explicitly allowed.
         try:
             async with conn.transaction(readonly=not allow_writes):
-                explain_val = await conn.fetchval(
-                    "EXPLAIN (ANALYZE, FORMAT JSON, BUFFERS) " + sql
-                )
+                explain_val = await conn.fetchval("EXPLAIN (ANALYZE, FORMAT JSON, BUFFERS) " + sql)
         except asyncpg.PostgresError as e:
             return RunResult(specimen_up=True, error=str(e))
 
         explain_json = (
-            explain_val
-            if isinstance(explain_val, (list, dict))
-            else json.loads(explain_val)
+            explain_val if isinstance(explain_val, (list, dict)) else json.loads(explain_val)
         )
 
         # Fetch a capped page of rows for the result grid (a second read-only pass;
