@@ -13,6 +13,7 @@ from app.middleware.tracing import TracingMiddleware
 from app.models import Base
 from app.routers import (
     auth,
+    cases,
     mechanic,
     messages,
     meta,
@@ -72,6 +73,7 @@ app.include_router(mechanic.router)
 app.include_router(rounds.router)
 app.include_router(reps.router)
 app.include_router(slots.router)
+app.include_router(cases.router)
 
 
 @app.get("/", tags=["root"])

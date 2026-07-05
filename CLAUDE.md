@@ -113,6 +113,13 @@ Notes:
   correctness verdict via the assertion engine (a `benchmark` trace is recorded).
   Dusty-decay is derived from `last_run_at`; no streak column exists. Endpoints
   `/api/reps/*`, `/api/slots/cache/register`, `/api/bench`; UI at `/gym`.
+- **Case Files (Phase 5.5):** a real question worked across two worlds. `cases.py`:
+  file a question → seed world-1 (books) → investigate → advance (seed a DIFFERENT
+  world-2, sensors, same missing-index principle) → port the fix (win-checked by the
+  assertion engine) → close with a domain-independent explain-back. The two-context
+  rule is structural: `close()` raises `TwoContextRequiredError` (428) until both
+  worlds are solved. World templates live in `world_seeder.WORLDS`. Endpoints
+  `/api/cases/*`; UI at `/cases`.
 - **Type Bridge:** Pydantic models → OpenAPI → TypeScript types.
 - **Workshop Pattern:** Each workshop is self-contained with its own routes, components, and API endpoints.
 

@@ -184,6 +184,18 @@ export const api = {
       }),
     list: () => fetchAPI<any[]>("/api/bench"),
   },
+  cases: {
+    create: (body: { title: string; question: string }) =>
+      fetchAPI<any>("/api/cases", { method: "POST", body: JSON.stringify(body) }),
+    investigate: (id: number, body: { sql: string; setup_sql?: string }) =>
+      fetchAPI<any>(`/api/cases/${id}/investigate`, { method: "POST", body: JSON.stringify(body) }),
+    advance: (id: number, body: { note: string }) =>
+      fetchAPI<any>(`/api/cases/${id}/advance`, { method: "POST", body: JSON.stringify(body) }),
+    port: (id: number, body: { fix_sql: string; note?: string }) =>
+      fetchAPI<any>(`/api/cases/${id}/port`, { method: "POST", body: JSON.stringify(body) }),
+    close: (id: number, body: { explain_back: string }) =>
+      fetchAPI<any>(`/api/cases/${id}/close`, { method: "POST", body: JSON.stringify(body) }),
+  },
   raw: async (url: string, options?: RequestInit) => {
     const res = await fetch(`${BASE_URL}${url}`, options);
     const traceId = res.headers.get("X-Trace-Id");

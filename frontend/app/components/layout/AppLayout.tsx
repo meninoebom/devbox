@@ -16,6 +16,7 @@ import {
   Wrench,
   Swords,
   Dumbbell,
+  FolderOpen,
 } from "lucide-react";
 
 const workshopGroups = [
@@ -26,6 +27,7 @@ const workshopGroups = [
       { to: "/mechanic", icon: Wrench, label: "The Mechanic" },
       { to: "/rounds", icon: Swords, label: "The Rounds" },
       { to: "/gym", icon: Dumbbell, label: "The Gym" },
+      { to: "/cases", icon: FolderOpen, label: "Case Files" },
       { to: "/guides", icon: BookOpen, label: "Field Guides" },
     ],
   },

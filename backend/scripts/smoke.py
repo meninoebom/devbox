@@ -296,6 +296,55 @@ async def run() -> int:
                 "the bench lists impls with a derived dust signal",
             )
 
+            # --- Case files: a real question worked across two worlds ---
+            print("cases:")
+            cc = await client.post(
+                "/api/cases",
+                json={"title": "KV cache for reads?", "question": "Could a cache speed up X?"},
+            )
+            ccj = cc.json()
+            if not ccj.get("symptom", {}).get("specimen_up", False):
+                c.ok(False, "case files need the lab specimen")
+            else:
+                cid = ccj["case"]["id"]
+                sym1 = _node_types(ccj["symptom"]["plan"])
+                c.ok(
+                    any("Seq Scan" in (t or "") for t in sym1), "case world-1 symptom is a seq scan"
+                )
+
+                early = await client.post(f"/api/cases/{cid}/close", json={"explain_back": "x"})
+                c.ok(
+                    early.status_code == 428, "case cannot close before the two-context rule is met"
+                )
+
+                adv = await client.post(
+                    f"/api/cases/{cid}/advance", json={"note": "unindexed FK lookup"}
+                )
+                advj = adv.json()
+                c.ok(
+                    advj["case"]["template_2"] == "sensors",
+                    "world-2 is a different surface (sensors)",
+                )
+                sym2 = _node_types(advj["symptom"]["plan"])
+                c.ok(any("Seq Scan" in (t or "") for t in sym2), "world-2 shows the same principle")
+
+                port = await client.post(
+                    f"/api/cases/{cid}/port",
+                    json={"fix_sql": "CREATE INDEX ON readings(sensor_id)"},
+                )
+                c.ok(port.json().get("ported") is True, "the ported fix wins in world-2")
+
+                closed = await client.post(
+                    f"/api/cases/{cid}/close",
+                    json={
+                        "explain_back": "a cache helps when reads dominate writes and keys are few"
+                    },
+                )
+                c.ok(
+                    closed.json().get("closed") is True,
+                    "case closes after both worlds + explain-back",
+                )
+
     if c.failures:
         print(f"\nSMOKE FAILED: {len(c.failures)} check(s) red")
         return 1
