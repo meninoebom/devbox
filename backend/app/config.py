@@ -23,5 +23,10 @@ class Settings(BaseSettings):
     LAB_STATEMENT_TIMEOUT_MS: int = 5000
     LAB_ROW_CAP: int = 500
 
+    # The Mechanic (Phase 3). No key -> the endpoint returns a clear "set a key"
+    # message; the gate never needs one (it injects a scripted client).
+    ANTHROPIC_API_KEY: str = ""
+    MECHANIC_MODEL: str = "claude-sonnet-5"
+
 
 settings = Settings()

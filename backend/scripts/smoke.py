@@ -106,6 +106,48 @@ async def run() -> int:
             )
             c.ok(wc.json().get("call_result") is not None, "workbench run honors a call-it")
 
+            # --- Phase 3: the Mechanic (scripted model, REAL traced tool call) ---
+            print("mechanic:")
+            from app.routers.mechanic import get_model_client
+            from app.services.model_client import ModelResponse, ScriptedClient, ToolCall
+
+            app.dependency_overrides[get_model_client] = lambda: ScriptedClient(
+                [
+                    ModelResponse(
+                        tool_calls=[
+                            ToolCall(
+                                id="t1",
+                                name="query_db",
+                                input={"sql": "SELECT count(*) FROM authors"},
+                            )
+                        ]
+                    ),
+                    ModelResponse(text="Authors is a small table; COUNT(*) scans it."),
+                ]
+            )
+            try:
+                ar = await client.post(
+                    "/api/mechanic/ask",
+                    json={"question": "how big is authors?", "stance": "workbench"},
+                )
+                aj = ar.json()
+                c.ok(
+                    ar.status_code == 200 and bool(aj.get("answer")),
+                    "mechanic answers a workbench question",
+                )
+                at = await client.get(f"/api/traces/{aj['trace_id']}")
+                atj = at.json()
+                alanes = [e["lane"] for e in atj["events"]]
+                c.ok(atj["kind"] == "agent_run", "mechanic trace kind == agent_run")
+                c.ok("llm" in alanes and "tool" in alanes, "mechanic trace has llm + tool lanes")
+
+                br = await client.post(
+                    "/api/mechanic/ask", json={"question": "q", "stance": "training"}
+                )
+                c.ok(br.status_code == 428, "training stance demands a committed prediction (428)")
+            finally:
+                app.dependency_overrides.pop(get_model_client, None)
+
     if c.failures:
         print(f"\nSMOKE FAILED: {len(c.failures)} check(s) red")
         return 1

@@ -23,6 +23,7 @@ from app.models.base import Base
 class TraceKind(enum.StrEnum):
     REQUEST = "request"
     WORKBENCH_RUN = "workbench_run"
+    AGENT_RUN = "agent_run"
 
 
 class Lane(enum.StrEnum):
