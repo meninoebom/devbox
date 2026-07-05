@@ -95,6 +95,15 @@ Notes:
   are traced). Records `agent_run` traces (llm + tool lanes). Stance follows the door
   (direct in Workbench, Socratic elsewhere with a 428 prediction gate). Endpoints:
   `/api/mechanic/ask|hint|step`; UI at `/mechanic` (chat + specimen step mode).
+- **The Rounds (Phase 4):** generated data-floor puzzles. A `FaultFamily`
+  (`faults.py`) is a parameterized pathology with a broken-state signature, a WIN
+  `AssertionSpec`, and a known par. `rounds.generate` seeds a fresh world into its
+  OWN Postgres schema (`round_<id>`, via `world_seeder` + LabRunner's `schema`
+  param) so play is isolated from the Workbench; `rounds.submit` runs the player's
+  fix in that schema and the WIN is decided by the assertion engine (masking fixes
+  fail structurally). Score is delta-from-par; cadence = reps + trailing-14-day rate
+  (no streak column exists). Endpoints `/api/rounds/generate|{id}/submit|cadence`;
+  UI at `/rounds`.
 - **Type Bridge:** Pydantic models → OpenAPI → TypeScript types.
 - **Workshop Pattern:** Each workshop is self-contained with its own routes, components, and API endpoints.
 

@@ -18,6 +18,7 @@ from app.routers import (
     meta,
     predictions,
     projects,
+    rounds,
     traces,
     wager,
     workbench,
@@ -66,6 +67,7 @@ app.include_router(workbench.router)
 app.include_router(predictions.router)
 app.include_router(wager.router)
 app.include_router(mechanic.router)
+app.include_router(rounds.router)
 
 
 @app.get("/", tags=["root"])

@@ -16,6 +16,21 @@ import httpx
 from app.main import app
 
 
+def _node_types(plan) -> list[str]:
+    out: list[str] = []
+
+    def walk(n):
+        if not n:
+            return
+        out.append(n.get("node_type"))
+        for ch in n.get("children", []):
+            walk(ch)
+
+    if plan:
+        walk(plan.get("root"))
+    return out
+
+
 class Check:
     def __init__(self):
         self.failures: list[str] = []
@@ -189,6 +204,43 @@ async def run() -> int:
                 )
             finally:
                 app.dependency_overrides.pop(get_model_client, None)
+
+            # --- Phase 4: the Rounds (generated puzzles, assertion win, par) ---
+            print("rounds:")
+            gen = await client.post(
+                "/api/rounds/generate", json={"fmt": "regression", "family": "missing_index"}
+            )
+            gj = gen.json()
+            if not gj.get("symptom", {}).get("specimen_up", False):
+                c.ok(False, "rounds need the lab specimen")
+            else:
+                rid = gj["id"]
+                sym_types = _node_types(gj["symptom"]["plan"])
+                c.ok(
+                    any("Seq Scan" in (t or "") for t in sym_types),
+                    "regression symptom is a seq scan",
+                )
+
+                sub = await client.post(
+                    f"/api/rounds/{rid}/submit",
+                    json={"fix_sql": "CREATE INDEX ON books(author_id)"},
+                )
+                sj = sub.json()
+                c.ok(sj.get("won") is True, "the par fix wins the round")
+                c.ok(sj.get("delta") == 0, "par fix is at par (delta 0)")
+
+                gen2 = await client.post(
+                    "/api/rounds/generate", json={"fmt": "regression", "family": "missing_index"}
+                )
+                rid2 = gen2.json()["id"]
+                mask = await client.post(
+                    f"/api/rounds/{rid2}/submit",
+                    json={"fix_sql": "CREATE INDEX ON books(price)"},
+                )
+                c.ok(mask.json().get("won") is False, "a masking fix does not win")
+
+                cad = await client.get("/api/rounds/cadence")
+                c.ok(cad.json().get("reps", 0) >= 1, "cadence counts a rep after a win")
 
     if c.failures:
         print(f"\nSMOKE FAILED: {len(c.failures)} check(s) red")

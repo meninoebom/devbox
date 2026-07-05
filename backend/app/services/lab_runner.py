@@ -46,6 +46,7 @@ async def run(
     dsn: str | None = None,
     timeout_ms: int | None = None,
     row_cap: int | None = None,
+    schema: str | None = None,
 ) -> RunResult:
     """Run setup DDL (if any) then the query, returning rows, the EXPLAIN ANALYZE
     plan, and timing. Never raises for user SQL errors — they come back on
@@ -64,6 +65,9 @@ async def run(
 
     try:
         await conn.execute(f"SET statement_timeout = {int(timeout_ms)}")
+        # Isolate a round's play to its own schema (falls back to public).
+        if schema:
+            await conn.execute(f'SET search_path TO "{schema}", public')
 
         # Setup DDL (e.g. CREATE INDEX) runs first and commits, so it is in effect
         # for the query and for subsequent runs. asyncpg's execute() allows the

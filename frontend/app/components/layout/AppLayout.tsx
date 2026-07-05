@@ -14,6 +14,7 @@ import {
   FlaskConical,
   BookOpen,
   Wrench,
+  Swords,
 } from "lucide-react";
 
 const workshopGroups = [
@@ -22,6 +23,7 @@ const workshopGroups = [
     items: [
       { to: "/workbench", icon: FlaskConical, label: "Workbench" },
       { to: "/mechanic", icon: Wrench, label: "The Mechanic" },
+      { to: "/rounds", icon: Swords, label: "The Rounds" },
       { to: "/guides", icon: BookOpen, label: "Field Guides" },
     ],
   },

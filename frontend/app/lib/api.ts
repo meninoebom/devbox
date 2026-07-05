@@ -149,6 +149,19 @@ export const api = {
         body: JSON.stringify(body),
       }),
   },
+  rounds: {
+    generate: (body: { fmt?: string; family?: string }) =>
+      fetchAPI<any>("/api/rounds/generate", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    submit: (id: number, body: { fix_sql: string; query?: string }) =>
+      fetchAPI<any>(`/api/rounds/${id}/submit`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    cadence: () => fetchAPI<any>("/api/rounds/cadence"),
+  },
   raw: async (url: string, options?: RequestInit) => {
     const res = await fetch(`${BASE_URL}${url}`, options);
     const traceId = res.headers.get("X-Trace-Id");
