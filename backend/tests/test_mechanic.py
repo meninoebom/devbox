@@ -7,7 +7,8 @@ import httpx
 
 from app.main import app
 from app.models.trace import Lane
-from app.services.mechanic import run_loop, system_prompt
+from app.services.mechanic import run_loop, step_once, system_prompt
+from app.services.mechanic_prompts import hint_prompt
 from app.services.model_client import ModelResponse, ScriptedClient, ToolCall
 
 SERVICES = pathlib.Path(__file__).resolve().parent.parent / "app" / "services"
@@ -73,7 +74,7 @@ def test_no_agent_framework_imports():
         "semantic_kernel",
     )
     hits = []
-    for name in ("mechanic.py", "model_client.py", "mechanic_tools.py"):
+    for name in ("mechanic.py", "mechanic_prompts.py", "model_client.py", "mechanic_tools.py"):
         text = (SERVICES / name).read_text(encoding="utf-8")
         hits += [f"{name}:{fw}" for fw in forbidden if fw in text]
     assert hits == [], f"agent framework used (frozen decision forbids it): {hits}"
@@ -83,6 +84,39 @@ def test_loop_stays_small():
     # No-bloat guard on the hand-rolled loop (frozen decision: ~150 lines).
     n = len((SERVICES / "mechanic.py").read_text(encoding="utf-8").splitlines())
     assert n <= 160, f"mechanic.py is {n} lines; keep the loop small"
+
+
+def test_hint_prompt_escalates_by_tier():
+    # Tier 0 points at a lane; tier 3 walks the method. All refuse to hand the answer.
+    assert "lane" in hint_prompt(0).lower()
+    assert "step by step" in hint_prompt(3).lower()
+    assert hint_prompt(0) != hint_prompt(3)
+    assert "not the answer" in hint_prompt(1).lower()
+
+
+def test_step_once_is_one_turn_and_resumable():
+    async def scenario():
+        client = ScriptedClient(
+            [
+                ModelResponse(
+                    tool_calls=[ToolCall(id="t1", name="query_db", input={"sql": "SELECT 1"})]
+                ),
+                ModelResponse(text="It is a Seq Scan."),
+            ]
+        )
+
+        async def runner(name, inp):
+            return {"plan_root": "Seq Scan"}
+
+        s1 = await step_once(client, [{"role": "user", "content": "q"}], runner, "workbench")
+        assert s1["kind"] == "tool_use" and s1["done"] is False
+        assert len(s1["messages"]) > 1  # grew: assistant tool_use + tool_result
+
+        s2 = await step_once(client, s1["messages"], runner, "workbench")
+        assert s2["kind"] == "answer" and s2["done"] is True
+        assert "seq scan" in s2["answer"].lower()
+
+    asyncio.run(scenario())
 
 
 def test_training_stance_requires_a_prediction():

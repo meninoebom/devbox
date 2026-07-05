@@ -122,6 +122,33 @@ export const api = {
         body: JSON.stringify(body),
       }),
   },
+  mechanic: {
+    ask: (body: {
+      question: string;
+      stance?: string;
+      prediction_id?: number;
+      assist?: boolean;
+    }) =>
+      fetchAPI<any>("/api/mechanic/ask", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    hint: (body: { question: string; tier: number }) =>
+      fetchAPI<any>("/api/mechanic/hint", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    step: (body: {
+      question?: string;
+      messages?: any[];
+      stance?: string;
+      predict?: string;
+    }) =>
+      fetchAPI<any>("/api/mechanic/step", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  },
   raw: async (url: string, options?: RequestInit) => {
     const res = await fetch(`${BASE_URL}${url}`, options);
     const traceId = res.headers.get("X-Trace-Id");

@@ -87,8 +87,23 @@ Notes:
   EXPLAIN JSON into a plan tree with hot/misestimate highlights → plan graph. Records a
   `workbench_run` trace. Setup DDL (e.g. CREATE INDEX) runs first and persists, so the
   index dial is real.
+- **The Mechanic (Phase 3):** a hand-rolled agent loop (no framework; `mechanic.py`
+  `step_once`/`run_loop`, prompts in `mechanic_prompts.py`). The ModelClient and the
+  tool_runner are FastAPI dependencies, so the gate injects a ScriptedClient + fake
+  runner (offline, deterministic) while runtime uses the real Anthropic client and a
+  tool_runner whose tools ARE DevBox's own API (in-process ASGI calls, so tool calls
+  are traced). Records `agent_run` traces (llm + tool lanes). Stance follows the door
+  (direct in Workbench, Socratic elsewhere with a 428 prediction gate). Endpoints:
+  `/api/mechanic/ask|hint|step`; UI at `/mechanic` (chat + specimen step mode).
 - **Type Bridge:** Pydantic models → OpenAPI → TypeScript types.
 - **Workshop Pattern:** Each workshop is self-contained with its own routes, components, and API endpoints.
+
+## The build loop
+Phases 2+ are built by an autonomous loop against `docs/design/autonomous-build-spec.md`
+(frozen decisions + executable gates), paused at each phase boundary for review.
+The gate is `mise run gate` (typecheck + ruff + pytest + smoke); it is hard (green or
+halt) and cumulative. Run `mise run lab:up` first (smoke needs the specimen). Add a
+key with Doppler to actually talk to the Mechanic; the gate never needs one.
 
 ## Design & plan of record
 - Full product design (v3, panel-reviewed): `docs/design/one-glass-box.md`.

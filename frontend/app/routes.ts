@@ -4,6 +4,7 @@ export default [
   index("routes/home.tsx"),
   layout("routes/layout.tsx", [
     route("workbench", "routes/workbench.tsx"),
+    route("mechanic", "routes/mechanic.tsx"),
     route("guides", "routes/guides.tsx"),
     route("workshops/http", "routes/workshops.http.tsx"),
     route("workshops/types", "routes/workshops.types.tsx"),

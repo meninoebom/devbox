@@ -106,13 +106,18 @@ async def run() -> int:
             )
             c.ok(wc.json().get("call_result") is not None, "workbench run honors a call-it")
 
-            # --- Phase 3: the Mechanic (scripted model, REAL traced tool call) ---
+            # --- Phase 3: the Mechanic (scripted model, REAL traced tools) ---
             print("mechanic:")
             from app.routers.mechanic import get_model_client
             from app.services.model_client import ModelResponse, ScriptedClient, ToolCall
 
-            app.dependency_overrides[get_model_client] = lambda: ScriptedClient(
-                [
+            def scripted(*responses):
+                rs = list(responses)
+                return lambda: ScriptedClient(list(rs))
+
+            try:
+                # ask: one tool call, then a final answer
+                app.dependency_overrides[get_model_client] = scripted(
                     ModelResponse(
                         tool_calls=[
                             ToolCall(
@@ -123,9 +128,7 @@ async def run() -> int:
                         ]
                     ),
                     ModelResponse(text="Authors is a small table; COUNT(*) scans it."),
-                ]
-            )
-            try:
+                )
                 ar = await client.post(
                     "/api/mechanic/ask",
                     json={"question": "how big is authors?", "stance": "workbench"},
@@ -135,16 +138,55 @@ async def run() -> int:
                     ar.status_code == 200 and bool(aj.get("answer")),
                     "mechanic answers a workbench question",
                 )
-                at = await client.get(f"/api/traces/{aj['trace_id']}")
-                atj = at.json()
+                atj = (await client.get(f"/api/traces/{aj['trace_id']}")).json()
                 alanes = [e["lane"] for e in atj["events"]]
                 c.ok(atj["kind"] == "agent_run", "mechanic trace kind == agent_run")
                 c.ok("llm" in alanes and "tool" in alanes, "mechanic trace has llm + tool lanes")
 
+                # training stance is blocked without a committed prediction
                 br = await client.post(
                     "/api/mechanic/ask", json={"question": "q", "stance": "training"}
                 )
                 c.ok(br.status_code == 428, "training stance demands a committed prediction (428)")
+
+                # hint: single-shot, tiered
+                app.dependency_overrides[get_model_client] = scripted(
+                    ModelResponse(text="Look at the SQL lane first.")
+                )
+                hr = await client.post(
+                    "/api/mechanic/hint", json={"question": "why slow?", "tier": 0}
+                )
+                c.ok(
+                    hr.status_code == 200 and bool(hr.json().get("hint")),
+                    "hint returns a tiered hint",
+                )
+
+                # step-debugger: predict tool, first step IS a tool
+                app.dependency_overrides[get_model_client] = scripted(
+                    ModelResponse(
+                        tool_calls=[ToolCall(id="s1", name="query_db", input={"sql": "SELECT 1"})]
+                    )
+                )
+                st = await client.post(
+                    "/api/mechanic/step", json={"question": "why slow?", "predict": "tool"}
+                )
+                sj = st.json()
+                c.ok(
+                    sj["kind"] == "tool_use" and sj["correct"] is True and sj["done"] is False,
+                    "step 1 is a correctly-predicted tool call",
+                )
+                # step 2 resumes over the returned (editable) messages array
+                app.dependency_overrides[get_model_client] = scripted(
+                    ModelResponse(text="It is a Seq Scan on books.")
+                )
+                st2 = await client.post(
+                    "/api/mechanic/step", json={"messages": sj["messages"], "predict": "tool"}
+                )
+                sj2 = st2.json()
+                c.ok(
+                    sj2["kind"] == "answer" and sj2["done"] is True and sj2["correct"] is False,
+                    "step 2 answers; the wrong prediction is flagged",
+                )
             finally:
                 app.dependency_overrides.pop(get_model_client, None)
 
