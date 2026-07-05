@@ -37,27 +37,49 @@ This is not a tutorial with code snippets. This is a running application with an
 
 ## Quick Start
 
-You need Python 3.12+ and Node.js 18+.
+Toolchains are pinned and orchestrated by [mise](https://mise.jdx.dev). One install, one run.
 
-**Backend:**
 ```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-uvicorn app.main:app --reload --port 8000
+mise install        # node 20, pnpm, python 3.12, uv
+mise run dev        # frontend (5173) + backend (8000) together
 ```
 
-**Frontend** (separate terminal):
+Open [http://localhost:5173](http://localhost:5173). Click any surface. Click any button. Then open the Inspector.
+
+The app's own database is SQLite -- zero config, auto-created on first boot. If it gets weird, delete `backend/devbox.db` and restart.
+
+**The Workbench and the Rounds need a lab Postgres** -- a disposable specimen, the only thing that needs Docker. Everything else works without it.
+
 ```bash
-cd frontend
-npm install
-npm run dev
+mise run lab:up      # start it (host port 5435)
+mise run lab:reset   # drop + re-seed the world
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Click any workshop. Click any button. Then open the Inspector.
+**The Mechanic** (the resident agent) needs a key to think: set `ANTHROPIC_API_KEY` (a `.env` in `backend/`, or Doppler). Without one it answers with a friendly nudge.
 
-The database is SQLite -- zero config. It auto-creates on first boot. If something gets weird, delete `devbox.db` and restart.
+Common tasks:
+```bash
+mise run check       # typecheck (web) + ruff (api)
+mise run gate        # the full hard gate: typecheck + ruff + pytest + smoke (needs lab:up)
+mise tasks ls        # everything
+```
+
+---
+
+## The Surfaces
+
+The original eight workshops (below) taught the transport and data layers. The **Bench** built on top of them turns DevBox into one learning tool:
+
+- **Workbench** (`/workbench`) -- paste SQL, run it against the lab, read the visual query plan, add an index and diff the runs. The "why is this slow?" instrument.
+- **The Mechanic** (`/mechanic`) -- a hand-rolled resident agent whose tools are the app's own traced API. Chat with it, or step-debug its loop one turn at a time, predicting each move.
+- **The Rounds** (`/rounds`) -- generated data-floor puzzles (a fault, a symptom, a win check), scored against par.
+- **The Gym** (`/gym`) -- predict-gated deliberate-practice reps, plus a Bench where you hand-build a primitive (an LRU cache) and benchmark it against the reference.
+- **Case Files** (`/cases`) -- work a real question in a seeded world, then carry the fix to a *different* world (the two-context rule) before you can close it.
+- **The Agent Floor** (`/agent`) -- generated agent puzzles: Attribution (which layer dropped the datum?), Tripwire (author the eval), Ablation (cut context without failing held-out evals), over a sqlite-vec store.
+
+Everything on the Bench routes its verdicts through one assertion engine and records to the same universal trace, so the Inspector x-rays all of it.
+
+Design of record: `docs/design/one-glass-box.md`. How it was built (phase-by-phase against a hard gate): `docs/design/autonomous-build-spec.md`.
 
 ---
 
@@ -224,26 +246,23 @@ The tracing middleware automatically captures everything. You don't need to inst
 
 ## Development
 
-**Run backend tests:**
+Everything runs through mise (see the Quick Start). The load-bearing commands:
+
 ```bash
-cd backend
-source .venv/bin/activate
-pytest
+mise run dev         # frontend + backend
+mise run gate        # typecheck + ruff + pytest + smoke -- green or it fails (needs lab:up)
+mise run check       # typecheck (web) + ruff (api) only
+mise run lab:up      # the lab Postgres specimen; lab:reset to re-seed
 ```
 
-**Lint backend:**
-```bash
-ruff check app/
-```
+The gate is the project's contract: every phase's checks are cumulative and it is
+hard (green or halt). Never pipe `mise run check`/`gate` through `tail` -- it masks
+the exit code. Backend tools are an optional-deps extra, so anything ad-hoc runs via
+`uv run --extra dev ...` from `backend/` (e.g. `uv run --extra dev pytest -q`).
 
-**Reset the database:**
-```bash
-rm devbox.db   # from the backend directory
-# Tables auto-create on next startup
-```
+**Reset the app database:** `rm backend/devbox.db` -- tables auto-create on next boot.
 
-**API docs:**
-FastAPI generates interactive docs at [http://localhost:8000/docs](http://localhost:8000/docs). This is the same OpenAPI spec that could generate TypeScript types.
+**API docs:** FastAPI serves interactive docs at [http://localhost:8000/docs](http://localhost:8000/docs).
 
 ---
 
