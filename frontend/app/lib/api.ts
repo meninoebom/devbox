@@ -184,6 +184,17 @@ export const api = {
       }),
     list: () => fetchAPI<any[]>("/api/bench"),
   },
+  agent: {
+    attribution: () => fetchAPI<any>("/api/agent/attribution", { method: "POST" }),
+    attributionCheck: (body: { stages: any[]; layer: string }) =>
+      fetchAPI<any>("/api/agent/attribution/check", { method: "POST", body: JSON.stringify(body) }),
+    ablationCheck: (body: { config_fields: string[] }) =>
+      fetchAPI<any>("/api/agent/ablation/check", { method: "POST", body: JSON.stringify(body) }),
+    tripwireAttempt: (body: { assertion: any }) =>
+      fetchAPI<any>("/api/agent/tripwire/attempt", { method: "POST", body: JSON.stringify(body) }),
+    retrievalDemo: (miss: boolean) =>
+      fetchAPI<any>(`/api/agent/retrieval-demo?miss=${miss}`),
+  },
   cases: {
     create: (body: { title: string; question: string }) =>
       fetchAPI<any>("/api/cases", { method: "POST", body: JSON.stringify(body) }),

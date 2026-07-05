@@ -12,6 +12,7 @@ from app.middleware.cors import add_cors_middleware
 from app.middleware.tracing import TracingMiddleware
 from app.models import Base
 from app.routers import (
+    agent_floor,
     auth,
     cases,
     mechanic,
@@ -74,6 +75,7 @@ app.include_router(rounds.router)
 app.include_router(reps.router)
 app.include_router(slots.router)
 app.include_router(cases.router)
+app.include_router(agent_floor.router)
 
 
 @app.get("/", tags=["root"])

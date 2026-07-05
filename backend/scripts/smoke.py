@@ -345,6 +345,45 @@ async def run() -> int:
                     "case closes after both worlds + explain-back",
                 )
 
+            # --- Phase 6: the agent floor (embeddings, retrieval miss, Attribution) ---
+            print("agent floor:")
+            rd_ok = await client.get("/api/agent/retrieval-demo")
+            rd_miss = await client.get("/api/agent/retrieval-demo?miss=true")
+            c.ok(
+                rd_ok.json().get("found") is True,
+                "full top-k retrieves the gold chunk (sqlite-vec)",
+            )
+            c.ok(
+                rd_miss.json().get("found") is False,
+                "the retrieval-miss injector drops the gold chunk",
+            )
+
+            att = await client.post("/api/agent/attribution")
+            stages = att.json()["stages"]
+            expected = next((s["stage"] for s in stages if not s["gold_present"]), None)
+            chk = await client.post(
+                "/api/agent/attribution/check", json={"stages": stages, "layer": expected}
+            )
+            c.ok(
+                chk.json().get("correct") is True,
+                "Attribution bisection identifies the guilty layer",
+            )
+
+            abl = await client.post("/api/agent/ablation/check", json={"config_fields": ["A", "B"]})
+            c.ok(
+                abl.json().get("accepted") is False,
+                "an Ablation failing a held-out eval is rejected",
+            )
+
+            tw = await client.post(
+                "/api/agent/tripwire/attempt",
+                json={"assertion": {"target": "tokens", "op": "lte", "value": 100}},
+            )
+            c.ok(
+                tw.json()["holdout"]["precision"] == 1.0,
+                "a sound Tripwire scores on the held-out set",
+            )
+
     if c.failures:
         print(f"\nSMOKE FAILED: {len(c.failures)} check(s) red")
         return 1

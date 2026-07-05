@@ -120,6 +120,14 @@ Notes:
   rule is structural: `close()` raises `TwoContextRequiredError` (428) until both
   worlds are solved. World templates live in `world_seeder.WORLDS`. Endpoints
   `/api/cases/*`; UI at `/cases`.
+- **The Agent Floor (Phase 6):** generated agent puzzles, deterministic (no live
+  model) so the gate is offline. `agent_floor.py`: Attribution (bisect which pipeline
+  stage dropped a datum), Tripwire (author an assertion, scored precision/recall on a
+  HELD-OUT variant set), Ablation (prune an agent config; a held-out eval rejects
+  overfitting). Embeddings sit behind a two-method interface (`embeddings.py`:
+  deterministic `ToyEmbedder` + `RealEmbedder` stub); the vector store is sqlite-vec
+  (`vector_store.py`). All verdicts route through the assertion engine. Endpoints
+  `/api/agent/*`; UI at `/agent`.
 - **Type Bridge:** Pydantic models → OpenAPI → TypeScript types.
 - **Workshop Pattern:** Each workshop is self-contained with its own routes, components, and API endpoints.
 
